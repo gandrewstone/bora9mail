@@ -1,0 +1,3 @@
+#!/bin/bash
+namecoin -server &
+bitcoin-qt -rpcport=5835 -server -listen &

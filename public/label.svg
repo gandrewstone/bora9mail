@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   id="svg2"
+   sodipodi:docname="rubber_stamp.svg"
+   inkscape:export-filename="/home/chaunce/Documents/runeman.org/photo/wotd/pooh-bah.png"
+   viewBox="0 0 265.2 242.95"
+   inkscape:export-xdpi="135.74622"
+   version="1.1"
+   inkscape:export-ydpi="135.74622"
+   inkscape:version="0.48.4 r9939"
+   width="100%"
+   height="100%">
+  <defs
+     id="defs4">
+    <filter
+       id="filter3011"
+       inkscape:menu="Bevels"
+       inkscape:menu-tooltip="Basic specular bevel to use for building textures"
+       inkscape:label="Combined lighting"
+       color-interpolation-filters="sRGB">
+      <feGaussianBlur
+         id="feGaussianBlur3013"
+         result="result0"
+         stdDeviation="6"
+         in="SourceGraphic" />
+      <feDiffuseLighting
+         id="feDiffuseLighting3015"
+         lighting-color="#ffffff"
+         surfaceScale="4"
+         result="result5"
+         diffuseConstant="1">
+        <feDistantLight
+           id="feDistantLight3017"
+           elevation="45"
+           azimuth="235" />
+      </feDiffuseLighting>
+      <feComposite
+         id="feComposite3019"
+         k4="0"
+         in2="SourceGraphic"
+         k3="0"
+         k2="0"
+         k1="1.4"
+         result="fbSourceGraphic"
+         in="result5"
+         operator="arithmetic" />
+      <feGaussianBlur
+         id="feGaussianBlur3021"
+         in="fbSourceGraphic"
+         stdDeviation="6"
+         result="result0" />
+      <feSpecularLighting
+         id="feSpecularLighting3023"
+         lighting-color="#ffffff"
+         specularConstant="1"
+         surfaceScale="4"
+         result="result1"
+         specularExponent="25"
+         in="result0">
+        <feDistantLight
+           id="feDistantLight3025"
+           elevation="45"
+           azimuth="235" />
+      </feSpecularLighting>
+      <feComposite
+         id="feComposite3027"
+         k4="0"
+         in2="result1"
+         k3="1"
+         k2="1"
+         k1="0"
+         result="result4"
+         in="fbSourceGraphic"
+         operator="arithmetic" />
+      <feComposite
+         id="feComposite3029"
+         operator="in"
+         in="result4"
+         in2="SourceGraphic"
+         result="result2" />
+    </filter>
+    <filter
+       id="filter4518"
+       inkscape:collect="always">
+      <feGaussianBlur
+         id="feGaussianBlur4520"
+         stdDeviation="0.83769374"
+         inkscape:collect="always" />
+    </filter>
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     bordercolor="#666666"
+     inkscape:pageshadow="2"
+     inkscape:window-y="0"
+     fit-margin-left="0"
+     pagecolor="#ffffff"
+     inkscape:window-height="925"
+     inkscape:window-maximized="1"
+     inkscape:zoom="1.4142136"
+     inkscape:window-x="0"
+     showgrid="false"
+     borderopacity="1.0"
+     inkscape:current-layer="layer1"
+     inkscape:cx="257.32722"
+     inkscape:cy="83.930667"
+     fit-margin-top="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0"
+     inkscape:window-width="1920"
+     inkscape:pageopacity="0.0"
+     inkscape:document-units="px">
+    <inkscape:grid
+       id="grid2985"
+       originy="-583.49708px"
+       enabled="true"
+       originx="-127.4px"
+       visible="true"
+       snapvisiblegridlinesonly="true"
+       type="xygrid"
+       empspacing="5" />
+  </sodipodi:namedview>
+  <g
+     id="layer1"
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     transform="translate(-127.4 -225.91)">
+    <rect
+       id="rect2987"
+       style="color:#000000;stroke:#000000;fill:#f2f2f2"
+       height="60"
+       width="220"
+       y="392.36"
+       x="150" />
+    <rect
+       id="rect2995"
+       style="stroke-linejoin:round;color:#000000;stroke:#000000;stroke-linecap:round;stroke-width:1.0281;fill:#666666"
+       height="9.972"
+       width="211.97"
+       y="452.38"
+       x="154.01" />
+    <rect
+       id="rect3009"
+       style="stroke-linejoin:round;color:#000000;filter:url(#filter3011);stroke:#000000;stroke-linecap:round;fill:#cccccc"
+       height="10"
+       width="220"
+       y="392.36"
+       x="150" />
+    <g
+       id="g3040"
+       transform="matrix(1.0005 0 0 1.1206 -5.0836 -47.379)">
+      <path
+         id="path3038"
+         d="m240 282.36c16.667-6.0066 33.333-4.6218 50 0 12-10 12-20 0-30-18-10.667-34.667-10.667-50 0-14.363 14.788-9.4147 23.138 0 30z"
+         sodipodi:nodetypes="ccccc"
+         style="stroke:#000000;stroke-width:1px;fill:#000000"
+         inkscape:connector-curvature="0" />
+    </g>
+    <path
+       id="path3141"
+       sodipodi:nodetypes="ccccccc"
+       style="stroke:#000000;stroke-width:.96601px;fill:#000000"
+       inkscape:connector-curvature="0"
+       d="m239.99 392.38h40.018v-27.983c18.408-33.248 29.092-66.895 0-102.6h-40.018c-25.52 31.822-16.75 67.726 0 104.47z" />
+    <path
+       id="path3143"
+       style="stroke:#000000;stroke-width:1px;fill:#4d4d4d"
+       inkscape:connector-curvature="0"
+       d="m240 362.36h40v30h-40z" />
+    <rect
+       id="rect3196"
+       style="stroke-linejoin:round;color:#000000;stroke:#000000;stroke-linecap:round;fill:#4d4d4d"
+       height="6"
+       width="22"
+       y="461.87"
+       x="161.4" />
+    <rect
+       id="rect3198"
+       style="stroke-linejoin:round;color:#000000;stroke:#000000;stroke-linecap:round;fill:#4d4d4d"
+       height="6"
+       width="22"
+       y="461.87"
+       x="187.4" />
+    <rect
+       id="rect3200"
+       style="stroke-linejoin:round;color:#000000;stroke:#000000;stroke-linecap:round;fill:#4d4d4d"
+       height="6"
+       width="22"
+       y="461.87"
+       x="213.4" />
+    <rect
+       id="rect3202"
+       style="stroke-linejoin:round;color:#000000;stroke:#000000;stroke-linecap:round;fill:#4d4d4d"
+       height="6"
+       width="22"
+       y="461.87"
+       x="239.4" />
+    <rect
+       id="rect3204"
+       style="stroke-linejoin:round;color:#000000;stroke:#000000;stroke-linecap:round;stroke-width:.93585;fill:#4d4d4d"
+       height="6.0641"
+       width="19.064"
+       y="461.83"
+       x="265.37" />
+    <rect
+       id="rect3206"
+       style="stroke-linejoin:round;color:#000000;stroke:#000000;stroke-linecap:round;stroke-width:.93585;fill:#4d4d4d"
+       height="6.0641"
+       width="19.064"
+       y="461.83"
+       x="289.37" />
+    <rect
+       id="rect3208"
+       style="stroke-linejoin:round;color:#000000;stroke:#000000;stroke-linecap:round;stroke-width:.97919;fill:#4d4d4d"
+       height="6.0208"
+       width="21.021"
+       y="461.85"
+       x="311.39" />
+    <rect
+       id="rect3210"
+       style="stroke-linejoin:round;color:#000000;stroke:#000000;stroke-linecap:round;stroke-width:.93585;fill:#4d4d4d"
+       height="6.0641"
+       width="19.064"
+       y="461.83"
+       x="336.37" />
+    <text
+       xml:space="preserve"
+       style="font-size:52.00822067px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#ff6600;fill-opacity:1;stroke:none;font-family:Sans"
+       x="181.38594"
+       y="441.83145"
+       id="text3029"
+       sodipodi:linespacing="125%"
+       transform="scale(0.98857056,1.0115616)"><tspan
+         sodipodi:role="line"
+         id="tspan3031"
+         x="181.38594"
+         y="441.83145">LABEL</tspan></text>
+  </g>
+  <metadata
+     id="metadata52">
+    <rdf:RDF>
+      <cc:Work>
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <cc:license
+           rdf:resource="http://creativecommons.org/licenses/publicdomain/" />
+        <dc:publisher>
+          <cc:Agent
+             rdf:about="http://openclipart.org/">
+            <dc:title>Openclipart</dc:title>
+          </cc:Agent>
+        </dc:publisher>
+        <dc:title></dc:title>
+      </cc:Work>
+      <cc:License
+         rdf:about="http://creativecommons.org/licenses/publicdomain/">
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Reproduction" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Distribution" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#DerivativeWorks" />
+      </cc:License>
+    </rdf:RDF>
+  </metadata>
+</svg>

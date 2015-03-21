@@ -1,0 +1,64 @@
+<template name="messageCatalog">
+<div id="mlwrapper">
+  <div id="mlcontent">
+    <hr id="headerRule"/>
+    {{#if showPage "message"}}
+      {{> messagePage}}
+    {{else}}
+    {{> messageList}}
+    {{/if}}
+    {{> compose}}
+  </div>
+  <div id="mlsidebar">
+    <div id="mlsidebarContents">
+    <button class="compose">Compose</button>
+    {{#if numSelectedEmails}}
+      <div id="applyLabel"><img src="label.svg" /></div>
+      <div id="deleteMessages"><img src="recycle.svg" /></div>
+    {{/if}}
+    {{> labelList}}
+    </div>
+  </div>
+  <div class="cleared"></div>
+</div>
+</template>
+
+<template name="labelList">
+  <table class="labelTable">
+  {{#each messageLabels}}
+    <tr class="{{labelStyle this}}" id="label.{{name}}"><td>{{name}}({{unread}})</td></tr>
+  {{/each}}
+  {{#if showing "addingLabel"}}
+    <INPUT TYPE=TEXT id="labelAddInput"/>
+  {{/if}}
+  </table>
+  <div id="labelAdd"><img id="labelAddImg" src="plus.svg" /></div>
+</template>
+  
+
+<template name="messageList">
+  <table id="mailListTable">
+  <tr>
+  <!-- td>TO:</td -->
+  <td class="summaryCheckBoxTd"><input type="checkbox" id="allEmails"/></td>
+  <td>FROM:</td>
+  <td>SUBJECT:</td>
+  <td>DATE:</td>
+  <td></td>
+  </tr>
+
+  {{#each messages}}
+  <tr id="{{id}}" class="emailSummary" style="color:black">
+  <td class="summaryCheckBoxTd"><input class="summaryCheckBox" type="checkbox" id="{{id}}"/></td>
+  <td class="emailSummaryfrom">{{personDisplay from}}</td>
+  <td><strong>{{decrypt cipherkey subject}}</strong> - {{decrypt cipherkey preview}}</td>
+  <!--td>{{id}}</td -->
+  <td>{{dateDisplay date}}</td>
+  </tr>
+  {{else}}
+  <tr>
+  <td>No messages</td>
+  </tr>
+  {{/each}}
+  </table>
+</template>

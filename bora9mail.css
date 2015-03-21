@@ -1,0 +1,276 @@
+/* CSS declarations go here */
+td.summaryCheckBoxTd {
+  border: 0px;
+  vertical-align: middle;
+  text-align:left;
+  padding: 0px;
+  background-color: lightblue;
+  width: 25px;
+}
+
+.inputbits {
+  width: 6em;
+  text-align: right;
+  background-color: lightgreen;
+}
+
+.inputusd {
+  width: 6em;
+  text-align: right;
+  background-color: lightgreen;
+}
+
+.inputDuration {
+  width: 6em;
+  text-align: right;
+  background-color: lightgreen;
+}
+
+
+#mailListTable {
+  width:100%; 
+  cursor:default;
+}
+
+.composeTo {
+  width: 99%;
+}
+.composeCC {
+  width: 99%;
+}
+.composeSubject {
+  width: 99%;
+}
+
+table td.smallest {
+  white-space:nowrap
+}
+
+table td.biggest {
+  width: 98%;
+}
+
+#composeCCInput {
+  display: block;
+  width: 100%;
+}
+#composeToInput {
+  display: block;
+  width: 100%;
+}
+
+#composeSubjectInput {
+  display: block;
+  width: 100%;
+}
+
+#messageEditor {
+  width: 99%;
+  height: 50%;
+}
+
+#loginLogo {
+  float: left;
+}
+
+#loginText {
+  float: right;
+}
+
+#username {
+ width: 12em;
+}
+
+#password {
+ width: 12em;
+}
+
+#siteIntroIcon {
+  width: 64px;
+  height: 64px;
+  float: left;
+  position: absolute; 
+  top: 0;
+}
+
+#wrapper {
+  margin-left: 150px;
+}
+#content {
+  float: right;
+  width: 100%;
+  /* background-color: #CCF; */
+}
+#sidebar {
+  float: left;
+  width: 150px;
+  margin-left: -150px;
+  /* background-color: #FFA; */
+}
+
+.cleared {
+  clear: both;
+}
+
+#introBitcoin {
+  width: 100px;
+  height: 100px;
+}
+
+.byline {
+  background-color: #C0DDCC;
+}
+
+.paraIcon {
+  width: 100px;
+  height: 100px;
+}
+.paraIconWide {
+  width: 140px;
+  height: 100px;
+}
+
+#paraIconUSC {
+  width: 140px;
+  height: 100px;
+}
+
+.highlight {
+  
+}
+
+
+/* messageScreen */
+
+.compose {
+ float:left;
+}
+
+#deleteMessages {
+  height: 1em;
+  width: 2em;
+  float:left;
+}
+
+#applyLabel {
+  height: 2em;
+  width: 2em;
+  float: left;
+}
+
+#mlwrapper {
+  margin-left: 200px;
+}
+#mlcontent {
+  float: right;
+  width: 100%;
+  /* background-color: #CCF; */
+}
+
+/* Defines the outside of the message label sidebar */
+#mlsidebar {
+  float: left;
+  width: 210px;
+  margin-left: -210px;
+  /* background-color: #FFA; */
+}
+
+/* Defines the inside of the message label sidebar */
+#mlsidebarContents {
+  float: left;
+  width: 200px;
+  margin-left: 10px;
+  /* background-color: #FFA; */
+}
+
+
+.labelTable {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto
+}
+
+.labelSelected {
+  background-color: #D0F0E0;
+}
+
+.labelPicker {
+  background-color: #DD8000;
+}
+
+.labelNormal {
+  background-color: #BBBBBB;
+}
+
+.labelNormalDirty {
+  background-color: #DDDDDD;  
+}
+
+.labelNormalUnread {
+  background-color: #DDDDDD;
+  font-weight: bold;  
+}
+
+.labelNormalDirtyUnread {
+  background-color: #eeeeee;
+  font-weight: bold;  
+}
+
+#labelAdd {
+  height: 1em;
+  width: 1em;
+}
+
+#logout { 
+  height: 40px; 
+  float:right;
+}
+
+#serverStatus {
+  float:right;
+}
+#serverBackground {
+ z-index: 1;
+ height: 40px;
+ width: 40px;
+ }
+#serverCheckX {
+ z-index: 2;
+ height: 40px;
+ width: 40px;
+ position: relative;
+ left: -40px;
+}
+
+#showProfile {
+  float:right;
+  vertical-align: middle;
+}
+
+#btcStack {
+ height: 40px;
+}
+
+#myAvatar {
+ height: 40px;
+}
+
+.selectedLook {
+  background-color: #dddddd;
+
+}
+
+.nothing { }
+
+#siteicon {
+  height: 64px;
+}
+
+body {
+  background-color: #eeeeff;
+}
+
+#headerRule {
+  width: 75%;
+  color: purple;
+}

@@ -1,0 +1,38 @@
+<template name="compose">
+  {{#if showing "compose"}}
+  <div>
+  <table class="composeTo"><tr><td class="smallest">To: </td>
+  {{#each toUser}}
+  <td class="smallest">
+  {{{toUserDisplay name address}}}
+  </td>
+  {{/each}}
+  <td class="biggest">
+  <INPUT TYPE=TEXT id="composeToInput"/>
+  </td></tr></table>
+  <table class="composeCC"><tr><td class="smallest">CC:</td>
+  {{#each ccUser}}
+  <td class="smallest">
+  {{{toUserDisplay name address}}}
+  </td>
+  {{/each}}
+  <td class="biggest">
+  <INPUT TYPE=TEXT id="composeCCInput"/>
+  </td></tr></table>
+
+  <table class="composeSubject"><tr>
+    <td class="smallest">Subject:</td>
+    <td class="biggest" ><INPUT TYPE=TEXT id="composeSubjectInput"/></td>
+  </tr></table>
+  {{> messageEditor}}
+  <button id="composeSend">Send</button>
+  <button id="composeDone">Save in Drafts</button>
+  </div>
+ {{else}}
+ {{/if}}
+</template>
+
+<!-- This needs to be a separate template so that it is only rendered when the text box is really put onscreen so the ckeditor can find the textarea to replace -->
+<template name="messageEditor">
+  <textarea id="messageEditor" name="message"></textarea>
+</template>
