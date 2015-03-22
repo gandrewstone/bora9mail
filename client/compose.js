@@ -222,7 +222,8 @@ parseResolveTo = function(toString)
 
       //Meteor.call(test,[{}]);
       // Meteor.call("createMessage",{to: "foo", subject: 'sub', body: 'RPC call'});
-      hide("compose");
+      //hide("compose");
+      SetPage("main");
       //Session.set("composeToUser","");
       //Session.set("composeCCUser","");
       },
@@ -283,11 +284,19 @@ parseResolveTo = function(toString)
         }
       //Meteor.call(test,[{}]);
       // Meteor.call("createMessage",{to: "foo", subject: 'sub', body: 'RPC call'});
-      hide("compose");
+      SetPage("main");
+      //hide("compose");
       //Session.set("composeToUser","");
       //Session.set("composeCCUser","");
+     },
+
+
+   'click #composeCancel': function () 
+     {
+         //TODO:  Are you sure you want to leave without saving?
+	 SetPage("main");
      }
-   });
+    });
 
   //Template.compose.rendered = function() { $('#messageEditor').ckeditor(); };
 

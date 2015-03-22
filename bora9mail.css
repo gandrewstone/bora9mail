@@ -74,7 +74,8 @@ table td.biggest {
 }
 
 #loginText {
-  float: right;
+  float: left;
+  padding: 100;
 }
 
 #username {
