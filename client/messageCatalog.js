@@ -49,7 +49,7 @@ Template.messageCatalog.events(
    'click .compose': function () 
      {
      resetCompose();
-     show("compose");
+     SetPage("compose");
      },
    'click #deleteMessages': function ()
      {

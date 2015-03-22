@@ -1,5 +1,5 @@
 <template name="compose">
-  {{#if showing "compose"}}
+  <!--{{#if showing "compose"}}-->
   <div>
   <table class="composeTo"><tr><td class="smallest">To: </td>
   {{#each toUser}}
@@ -27,9 +27,10 @@
   {{> messageEditor}}
   <button id="composeSend">Send</button>
   <button id="composeDone">Save in Drafts</button>
+  <button id="composeCancel">Cancel</button>
   </div>
- {{else}}
- {{/if}}
+ <!--{{else}}-->
+ <!--{{/if}}-->
 </template>
 
 <!-- This needs to be a separate template so that it is only rendered when the text box is really put onscreen so the ckeditor can find the textarea to replace -->

@@ -54,7 +54,11 @@
         {{#if showPage "profile"}}
           {{> profilePage}}
         {{else}}
-          {{> messageCatalog}}
+          {{#if showPage "compose"}}
+            {{> compose}}
+          {{else}}
+            {{> messageCatalog}}
+          {{/if}}
         {{/if}}
       {{else}}
         {{> login}}
@@ -168,7 +172,7 @@
   <div id="loginHeader">
   <div id="loginLogo"><img align="middle" src="oval_small.png"/></div><div id="loginText"><h1>Bora9Mail</h1>
 
-  user: <INPUT TYPE=TEXT autocomplete="on" id="username"/>password: <INPUT TYPE=PASSWORD autocomplete="on" id="password"/> <button id="login">login</button> <button id="signup">join</button>
+  <div id="unme">user: <INPUT TYPE=TEXT autocomplete="on" id="username"/>   </div><div id="pwrd">password: <INPUT TYPE=PASSWORD autocomplete="on" id="password"/> </div><div id="ljbuts"><button id="login">login</button> <button id="signup">join</button></div>
   </div>
   </div>
 </template>
