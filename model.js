@@ -121,10 +121,10 @@ Meteor.methods({
       for(var i = 0; i<messageIdList.length; i++)
         {
         var msg = Messages.findOne({owner:this.userId, id: messageIdList[i]});
-        if ((msg.labels.length > 1) || (msg.labels[0] != "deleted"))  // If a message has any labels that is not deleted, delete just moves the message to the deleted label
+        if ((msg.labels.length > 1) || (msg.labels[0] != "deleted"))  // If a message has any label besides 'deleted', delete just moves the message to the 'deleted' label
           {
           console.log("moving mail: " + messageIdList[i] + " to deleted label");
-          Messages.update({owner:this.userId, id: messageIdList[i]},{labels:["deleted"]});
+          Messages.update({owner:this.userId, id: messageIdList[i]},{$set: {labels:["deleted"]}});  //GOS added $set: {}
           Labels.update({user:this.userId, name: "deleted"}, {$inc: {unread: 1}});
           }
         else 
@@ -157,7 +157,7 @@ Meteor.methods({
       return true;
       },
 
-    sendmail: function(to, from, inreplyto, enckey, subject,preview,message,id)
+    sendmail: function(to, from, inreplyto, enckey, subject,preview,message,id,keepcopy)
       {
       if (!this.userId) { console.log("Send but no logged in user!"); return ERROR_NOT_LOGGED_IN; }
       if (to == null) // sending to drafts
@@ -168,6 +168,7 @@ Meteor.methods({
         }
 
       // Normal mail send
+      keepcopy = keepcopy | false;  //GOS - set a default value of false.
       console.log("sending mail to " + JSON.stringify(to) + " " + to.typ);
       if (to.typ == "local")
         {
@@ -186,9 +187,11 @@ Meteor.methods({
         Messages.insert({ owner: username,to: username, from: from, date: Date(), cipherkey: enckey, re: inreplyto, subject: subject, preview: preview, message: message, id: id, labels:["inbox"], read: false, starred: false, importance:0, });
         labelAddMessage(to.name,"inbox", id);
 
-        Messages.insert({ owner: this.userId,to: username, from: from, date: Date(), cipherkey: enckey, re: inreplyto, subject: subject, preview: preview, message: message, id: id+1, labels:["sent"], read: true, starred: false, importance:0, });
+	if (keepcopy) {
+            Messages.insert({ owner: this.userId,to: username, from: from, date: Date(), cipherkey: enckey, re: inreplyto, subject: subject, preview: preview, message: message, id: id+1, labels:["sent"], read: true, starred: false, importance:0, });
         
-        labelAddMessage(fromuserid,"sent", id+1);
+            labelAddMessage(fromuserid,"sent", id+1);
+	    }
         }
       if (to.typ == "rfc822")
         {

@@ -242,6 +242,20 @@ Template.page.helpers({
 //console.log(plaintext);
 
     },
+   'click .dump': function () {
+       var dat = Messages.find({}, {});
+       dat.forEach(function (msg) {
+	   //var ky = msg.enckey;
+	   //if (publickey) {
+	   //    ky = ecc.decrypt(publickey,ky);
+	   //    }
+	   //var subj=sjcl.decrypt(msg.enckey,msg.subject);
+	   var subj= msg.subject;
+	   console.log("L: "+msg.labels+" ID: "+msg.id+" OWN: "+msg.owner+
+                   " To: "+msg.to+" From: "+msg.from+" Subj: "+subj);});
+       }
+	   
+	       
   });
 
 

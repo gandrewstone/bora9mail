@@ -21,11 +21,14 @@ usersToString = function(users)
     {
       if (users[i])  // users is an array but can have some nulls
         {
-        ret += users[i].address;
-        if (i < users.length -1) ret += ", ";
+            ret += users[i].address;
+        //GOS - this could leave a trailing ',' if the last one is a null.
+        //      so lets always add the ", " and then remove the last one l8r
+        //if (i < users.length -1) ret += ", ";
+	    ret += ", ";
         }
     }
-  return ret;
+  return ret.slice(0,-2);  //remove the trailing ", " (or nothing if ret=="")
   }
 
 formatAndEncryptMessage = function(toUsers, ccUsers, from,subject, msgtext,signingkey,publickey)
@@ -50,7 +53,9 @@ formatAndEncryptMessage = function(toUsers, ccUsers, from,subject, msgtext,signi
     cfg.iv = iv;
     var encryptedMsg = sjcl.encrypt(enckey, msgstr); //,cfg,rp);
     var encryptedSubject = sjcl.encrypt(enckey, subject); //,cfg,rp);
-    var msgPreview = stripHtml(msgtext.slice(0,MSG_PREVIEW_LEN));
+    //GOS - moved slice outside of stripHTML so end '>' of a long HTML code
+    //      doesn't get lost.
+    var msgPreview = stripHtml(msgtext).slice(0,MSG_PREVIEW_LEN);
     var encryptedPreview = sjcl.encrypt(enckey, msgPreview);
     //console.log(JSON.stringify(ct));
     //console.log(JSON.stringify(rp));
@@ -257,7 +262,7 @@ parseResolveTo = function(toString)
        var destinations = tos.concat(ccs);
 
        //console.log("Meteor.userId():" + Meteor.userId());
-
+       var copyToSentFolder = true;
        for (var i = 0; i < destinations.length; i++)
          {
          var to = destinations[i];
@@ -266,7 +271,7 @@ parseResolveTo = function(toString)
            console.log("sending to " + to.address);
            var message = formatAndEncryptMessage(tos, ccs, from,rawSubject, rawMessage,null,to.publickey);
            // You can pass null into from and inreplyto to increase anonymity.
-           Meteor.call("sendmail",to,from,inreplyto,message.enckey,message.subject,message.preview, message.message,message.id,
+           Meteor.call("sendmail",to,from,inreplyto,message.enckey,message.subject,message.preview, message.message,message.id,copyToSentFolder,
              function(error,result) 
                { 
                if (error) DisplayError("server error"); 
@@ -280,6 +285,7 @@ parseResolveTo = function(toString)
                    DisplayError(result); 
                  }
                });
+	   copyToSentFolder = false;  //GOS - only store one copy
            }
         }
       //Meteor.call(test,[{}]);
