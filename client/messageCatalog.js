@@ -172,7 +172,7 @@ Template.labelList.events({
     //else if (label == "drafts")
     //  return Messages.find({from: Session.get("username") + "@" + DNSname, labels: label}, {skip:Session.get("messageOffset"), limit: Session.get("userData").messagesPerPage }); 
     //else
-    console.log("Listing: owner: " + this.userId + "label: " + label);  
+    console.log("Listing: owner: " + Session.get("username") + " label: " + label);  
     return Messages.find({owner: Session.get("username"), labels: label}, {skip:Session.get("messageOffset"), limit: Session.get("userData").messagesPerPage });
     
     },

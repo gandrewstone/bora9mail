@@ -32,6 +32,8 @@ Template.messagePage.currentMessage = function()
 
     var trueMessageStr = sjcl.decrypt(realkey,dbLine.message);
     var msg = JSON.parse(trueMessageStr);
+    console.log("GOS msg contents:");
+    console.log(trueMessageStr);
     return msg;
   };
 
