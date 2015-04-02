@@ -3,8 +3,8 @@ Meteor.subscribe("userRecords");
 
 resetCompose = function()
   {
-    Session.set("composeToUser", [,]);
-    Session.set("composeCCUser", [,]);  
+    Session.set("composeToUser", []);
+    Session.set("composeCCUser", []);  
   }
 
 stripHtml = function(htmltext)
@@ -20,10 +20,10 @@ usersToString = function(users)
   for (var i = 0; i<users.length; i++)
     {
       if (users[i])  // users is an array but can have some nulls
-        {
+        {            //  (not anymore, but the check can't hurt)
             ret += users[i].address;
-        //GOS - this could leave a trailing ',' if the last one is a null.
-        //      so lets always add the ", " and then remove the last one l8r
+        //GOS - this could leave a trailing ',' if the last address is a null.
+        //      so lets always add a ", " and then remove the last one l8r
         //if (i < users.length -1) ret += ", ";
 	    ret += ", ";
         }
@@ -71,16 +71,56 @@ formatAndEncryptMessage = function(toUsers, ccUsers, from,subject, msgtext,signi
     return { message: encryptedMsg, subject: encryptedSubject, preview: encryptedPreview, enckey: enckey, id: hash  };
 }
 
+//Each time this is called, session variable emailAddressId is incremented
+// and then returned.  The first id returned will be 5, so 0-4 can be used
+// for special purposes (such as dummy objects).
+function getId() 
+{
+  var nextId = Session.get("emailAddressId") | 4;
+  Session.set("emailAddressId",++nextId);
+  return nextId;
+}
 
-EmailAddress = function(typee, name,address,publickey)
+//typ can be 256k1, todo, local, baduser, or invalid
+//tag will be appended to username portion of address after a '+' sign.
+// If "", the '+' will not be added.
+EmailAddress = function(typee, name,address,tag,publickey,idnum)
   {
-  this.typ = typee;
-  this.name = name;
-  this.address = address;
+  this.typ = typee;            //class of email address
+  this.name = name;            //user display name
+  this.address = address;      //address (such as user@server.com)
+  this.tag = tag;              //misc info included as part of username
   this.publickey = publickey;
+  this._id = idnum;
+  this.testString =  function () { return "This is a test string"; };
   }  
 
+EmailAddress.prototype.toString = function(htmlformat)
+{
+  htmlformat = (htmlformat==undefined) ? true : htmlformat;
+  var retstr = "", tail = "";
+  var lt = (htmlformat ? " &lt;" : " <");
+  var gt = (htmlformat ? "&gt;" : ">");
 
+  if ((this.typ=="local") || (this.typ == "rfc822"))
+  {
+    console.log("rfc822 " + this.name + " | " + this.address);
+    var uaddr = this.address.split('@');
+    if (this.name.length > 0)
+    {
+      retstr = this.name + lt;  //<, rendered as HTML
+      tail = gt;                  //>, rendered as HTML
+    }
+      retstr += uaddr[0];
+    if (this.tag.length > 0)
+      retstr += '+' + tag;
+    retstr += '@' + uaddr[1] + tail;
+    console.log("rfc822 = " + retstr);
+  }
+  else
+    retstr = this.address;
+  return retstr;
+};
 //String ->  email address  stuff
 
 //If the input string starts with a quoted-string, return the first position
@@ -119,21 +159,15 @@ function parseComment(str)
     var ch = str.charAt(i);
     console.log("checking character " + ch);
     if (ch == '(')
-    {
       level++;
-      //If recursive call causes exception, just pass it up to initial calling fn.
-      //i += parseComment(str.slice(i));
-    }
-    else if (ch == '\\') 
-    {
-      i++;  //escape character - skip next one
-    }
+     else if (ch == '\\') 
+       i++;  //escape character - skip next one
     else if (ch == ')')
     {
-      console.log("Closing comment level " + level);
+      //console.log("Closing comment level " + level);
       if (level--==0)  //First compare, then subtract after
       {
-	console.log("Found " + i + " characters in a comment");
+	//console.log("Found " + i + " characters in a comment");
 	return ++i;
       }
     }
@@ -183,12 +217,12 @@ OKTEXT = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" +
           "0123456789!#$%^&*-_=+`~?/{}|'";
 
 //Check a standard email address for syntax validity
-// WS+Cmts DisplayName WS+Cmts '<' WS+Cmts Username WS+Cmts '>' WS+Cmts '@' WS+Cmts server WS+Cmts
-// Username =  < addr >
-// DisplayName and addr can be quoted-strings or basic text
+// WS+Cmts DisplayName WS+Cmts '<' WS+Cmts Username WS+Cmts '>' WS+Cmts
+//    '@' WS+Cmts server WS+Cmts
+// DisplayName and Username can be quoted-strings or basic text
 //
-// Returns [errcode,pos] where errcode is one of:
-//  "Mismatch","NoClose","NoAt","NoAtom","NoServer","NoAngle", "NoFirst" or "Done"
+//Returns [errcode,pos] where errcode is one of:
+//"Mismatch","NoClose","NoAt","NoAtom","NoServer","NoAngle", "NoFirst" or "Done"
 function stdEmailAddrCheck(strg) {
   var result = ["OK",-1];  //return first illegal character and its position
   var str = strg.trim();
@@ -323,6 +357,8 @@ function earlySeparator(rslt,p,str)
     }
     console.log("Adding email " + str.slice(0,p));
     rslt.push(findEmail(str.slice(0,p)));
+    for(var i=0;i<rslt.length;i++)
+      console.log(rslt[i].toString());
     return true;
   }
   return false;
@@ -348,7 +384,7 @@ function noAction(rslt,p,str)
   return false;
 }
 
-//Actions to take while address is being typed in.  If we aren't sure, do nothing.
+//Actions to take while address is typed in. If we aren't sure, do nothing.
 parseActions = {
   "Mismatch" : noAction,
   "NoClose"  : noAction,
@@ -356,37 +392,62 @@ parseActions = {
   "NoAtom" : noAction,
   "NoFirst" : earlySeparator,
   "NoServer" : earlySeparator,
-  "NoAngle" : lateSeparator,
+  "NoAngle" : noAction,
   "Done" : lateSeparator
 };
 
-parseAddrField2 = function(toString) 
+//parseAddrField - return a 2-element array. 1st element is array of email
+//  addresses.  Second is current string in INPUT HTML element.
+//  Set entire to true to leave nothing in the INPUT element (create an invalid
+//  email address if necessary).
+parseAddrField = function(toStr,entire) 
 {
   var result = [];
   var parsed;
   var repeat = false;
 
+  if (entire===undefined)
+    entire=false;
+
   do {
-    parsed = stdEmailAddrCheck(toString);
-    console.log(parsed + "   " +toString);
-    if (parseActions[parsed[0]](result,parsed[1],toString.trim()))
+    parsed = stdEmailAddrCheck(toStr);
+    console.log(parsed + "   " +toStr);
+    if (parseActions[parsed[0]](result,parsed[1],toStr.trim()))
     {
-      console.log("Result is true");
-      toString = toString.slice(parsed[1]+1);
-      console.log("new string: "+toString );
-      repeat=(toString.length>0);
+      toStr = toStr.slice(parsed[1]+1);
+      console.log("new string: "+toStr );
+      repeat=(toStr.length>0);
     }
-    else
-      console.log("Result is false");
   } while (repeat);
 
-  return [result,toString];
+  if (entire && toStr.length>0)  //Put everything into an email address
+  {
+    if (parsed[0]=="NoClose")
+    {
+      toStr += '>';
+      parsed[0] = 'Done';
+    }
+    if (parsed[0] == "Done")
+    {
+      console.log("Adding email " + toStr);
+      result.push(stdEmail(toStr));
+      toStr = "";
+    }
+    else
+    {
+      console.log("Adding email " + toStr);
+      result.push(findEmail(toStr));
+      toStr = "";
+    }
+  }
+  return [result,toStr];
 }
 
-
-//pareAddrField - return a 2-element array. 1st element is array of email
+/*
+//OLD FUNCTION
+//parseAddrField - return a 2-element array. 1st element is array of email
 //  addresses.  Second is current string in INPUT HTML element.
-parseAddrField = function(toString) {
+OldParseAddrField = function(toString) {
   var result = []; //Array of email addresses
   var state = "INUSER";
   var level = 0;
@@ -456,19 +517,20 @@ parseAddrField = function(toString) {
     }
   return [result,toString];
 }
+*/
 
 function findEmail(to) {
   console.log("Looking for email for: " + to);
   if (to.slice(0,4) == PUBLIC_KEY_PREFIX)
   {
     console.log(to + " is a public key");
-    return new EmailAddress("256k1","", to, to);
+    return new EmailAddress("256k1","", to, "", to, getId());
   }
   else if (to.slice(0,NAMECOIN_PREFIX.length) == NAMECOIN_PREFIX)
   {
     console.log(to + " is a namecoin id");
     // TODO: look this up
-    return new EmailAddress("todo","",to,to);
+    return new EmailAddress("todo","",to, "",to, getId());
   }
   else 
   {
@@ -480,35 +542,44 @@ function findEmail(to) {
       if (userRec.publickey != null)
         console.log("with an encryption key");
       //TODO: change 'to' to userRec.DisplayName
-      return new EmailAddress("local",to,userRec.username + "@" + DNSname,
-			      userRec.publickey);
+      return new EmailAddress("local",to,userRec.username + "@" + DNSname, "",
+			      userRec.publickey, getId());
     }
     else
     {
       console.log("User " + to + " is unknown!");
-      DisplayError("User " + to + " is unknown!");
-      return new EmailAddress("invalid","",to,"");
+      //DisplayError("User " + to + " is unknown!");
+      return new EmailAddress("invalid","",to,"","", getId());
     }
   }
 }
 
+//This function should only be called after the email address is vetted
+// (no illegal characters and proper format) and contains a domain part.
 function stdEmail(to) {
-  if (to.search(DNSname) != -1)  // Its a local user, look up
+  var nameDomain = to.split("@");
+  var nameUser = nameDomain[0].split('<');
+  nameDomain = nameDomain[1].split('>');
+  console.log(nameUser);
+  if (nameDomain[0].search(DNSname) != -1)  // Its a local user, look up
   {
-    var nameDomain = to.split("@");
-    console.log(nameDomain[0] + " is a local user");
-    var userRec = UserRecords.findOne({username: nameDomain[0]});
+    var userRec = UserRecords.findOne({username: nameUser[nameUser.length-1]});
     if (userRec != null)
     {
-      if (userRec.publickey != null)
+     console.log(nameUser[nameUser.length-1] + " is a local user");
+     if (userRec.publickey != null)
         console.log("with an encryption key");
-      //TODO: change nameDomain[0] to userRec.DisplayName
-      return new EmailAddress("local", nameDomain[0], to, userRec.publickey);
+      //TODO: change nameUser[0] to userRec.DisplayName if no angle brackets
+      return new EmailAddress("local", nameUser[0],
+			      nameUser[nameUser.length-1] +'@' +nameDomain[0],
+			      "", userRec.publickey, getId());
     }
     else
     {
       DisplayError("User " + to + " is unknown!");
-      return new EmailAddress("baduser", nameDomain[0], to, null);
+      return new EmailAddress("baduser", nameUser[0],
+			      nameUser[nameUser.length-1] +'@' +nameDomain[0],
+			      "", null, getId());
     }
   }
   else
@@ -518,7 +589,9 @@ function stdEmail(to) {
     //       book display name.
     //TODO:  Send this to a validation routine first which will set the typ 
     //  field to either 'rfc822' or 'invalid'
-    return new EmailAddress("rfc822", "", to, null );
+    return new EmailAddress("rfc822", nameUser[0],
+			    nameUser[nameUser.length-1] +'@' +nameDomain[0],
+			    "", null, getId());
   }
 }
 
@@ -542,7 +615,9 @@ parseResolveTo = function(toString)
           {
           if (userRec.publickey != null)
             console.log("with an encryption key");
-          result[result.length] = new EmailAddress("local", nameDomain[0], to, userRec.publickey);
+          result[result.length] = new EmailAddress("local", nameDomain[0], to, 
+						   "", userRec.publickey, 
+						   getId());
           individuals[i] = ""; // we found this one...
           }
         else
@@ -553,14 +628,15 @@ parseResolveTo = function(toString)
       else
         {
         console.log(to + " is a RFC822 (classical) style email address");
-        result[result.length] = new EmailAddress("rfc822", "", to, null );
+        result[result.length] = new EmailAddress("rfc822", "", to, "", null,
+						 getId());
         individuals[i] = ""; // we found this one...
         }
       }
     else if (to.slice(0,4) == PUBLIC_KEY_PREFIX)
       {
       console.log(to + " is a public key");
-      result[result.length] = new EmailAddress("256k1","", to, to);
+      result[result.length] = new EmailAddress("256k1","", to, "", to, getId());
       individuals[i] = ""; // we found this one...
       }
     else if (to.slice(0,NAMECOIN_PREFIX.length) == NAMECOIN_PREFIX)
@@ -578,7 +654,7 @@ parseResolveTo = function(toString)
           {
           if (userRec.publickey != null)
             console.log("with an encryption key");
-          result[result.length] = new EmailAddress("local",to,userRec.username + "@" + DNSname, userRec.publickey);
+          result[result.length] = new EmailAddress("local",to,userRec.username + "@" + DNSname, "", userRec.publickey, getId());
           individuals[i] = ""; // we found this one...
           }
         else
@@ -607,33 +683,137 @@ parseResolveTo = function(toString)
       { return Session.get("composeCCUser"); },
     toUserDisplay: function(name, address)
       {
-      return address;
+      return address + ';';
+      },
+    toDisplay: function()
+      {
+	//The data context comes from Session.get, so is not the object it once
+	//was.  To remake it into an object we have to create a new object and 
+	//then copy the properties over.
+	console.log("ToDisplay: ");
+	console.log(this);
+	var displ = new EmailAddress();
+	for (var attr in this) {
+	  displ[attr] = this[attr];
+	}
+	return displ.toString(true);
+      },
+    showCloseX: function(id)
+      {
+	//console.log("ShowCloseX  " + id);
+	if (id == Session.get("beingWatched"))
+	  return '<img class="closeX" id="'+id+'" src="closeXSmall.png"/>';
+	else 
+	  return "";
       }
 
 
     });
 
+function processAddrField(str,field,entire)
+{
+  if (entire === undefined)
+    entire = false;
+
+  var array = parseAddrField(str,entire);
+  var tolist = Session.get(field);
+  if ((tolist == undefined) || (tolist == null) || (typeof(tolist) == "string"))
+    tolist = [];
+  tolist = tolist.concat(array[0]);
+  Session.set(field,tolist);
+  return array[1];
+}
+
+
   Template.compose.events({
     "keyup #composeToInput": function(event) 
     {
-    var array = parseAddrField2(event.currentTarget.value);
-    var tolist = Session.get("composeToUser");
-    if ((tolist == undefined) || (tolist == null) || (typeof(tolist) == "string")) tolist = [,];
-    tolist = tolist.concat(array[0]);
-    Session.set("composeToUser",tolist);
-    event.currentTarget.value = array[1];
+      event.currentTarget.value = processAddrField(event.currentTarget.value,
+						   "composeToUser",false);
+
     },
     "keyup #composeCCInput": function(event) 
     {
-    var array = parseAddrField2(event.currentTarget.value);
-    var list = Session.get("composeCCUser");
-    if ((list == undefined) || (list == null) || (typeof(list) == "string")) list = [,];
-    list = list.concat(array[0]);
-    Session.set("composeCCUser",list);
-    event.currentTarget.value = array[1];
-    
-    },
+      event.currentTarget.value = processAddrField(event.currentTarget.value,
+						   "composeCCUser",false);
 
+    },
+    "blur #composeToInput": function(event)
+    {
+      event.currentTarget.value = processAddrField(event.currentTarget.value,
+						   "composeToUser",true);
+    },
+    "blur #composeCCInput": function(event)
+    {
+      event.currentTarget.value = processAddrField(event.currentTarget.value,
+						   "composeCCUser",true);
+    },
+    'mouseenter .toAddr': function(event)
+    {
+      Session.set("beingWatched",event.currentTarget.id);
+    },
+    'mouseleave .toAddr': function(event)
+    {
+      //don't react to a child mouseout
+      //console.log("MouseOut");
+      Session.set("beingWatched",0);
+      //console.log(event.currentTarget);
+    },
+    'click .closeX': function(event)
+    {
+      console.log("Close " + event.currentTarget.id);
+      
+      var alst = ["composeToUser","composeCCUser"];
+      for (var aidx=0;aidx<alst.length;alst++)
+      {
+      var emlist = Session.get(alst[aidx]);
+	for (var i=0;i<emlist.length;i++)
+	{
+	  if (emlist[i]._id == event.currentTarget.id)
+	  {
+	    emlist.splice(i,1);  //remove element i;
+	    Session.set(alst[aidx],emlist);
+	    return;
+	  }
+	}
+      }
+      console.log("ERROR: Removed email address id not found!");	
+    },
+    'click .toAddr': function(event)
+    {
+      console.log("Edit " + event.currentTarget.id);
+      
+      var alst = ["composeToUser","composeCCUser"];
+      for (var aidx=0;aidx<alst.length;alst++)
+      {
+      var emlist = Session.get(alst[aidx]);
+	for (var i=0;i<emlist.length;i++)
+	{
+	  if (emlist[i]._id == event.currentTarget.id)
+	  {
+	    var editaddr = new EmailAddress();
+	    for (var attr in emlist[i]) {
+	      editaddr[attr] = emlist[i][attr];
+	    }
+	    //editaddr = emlist[i];
+	    //Session storage only works with strings -> doesn't keep objects
+	    //let's try to restore the object-ness of this data.
+	    //editaddr.prototype = EmailAddress.prototype;
+	    var textfield=event.currentTarget.parentNode.querySelector(
+	      ".composeInput").firstElementChild;
+	    console.log(textfield);
+	    console.log(editaddr);
+	    console.log(editaddr.toString(false));
+	    textfield.focus();
+	    textfield.value=editaddr.toString(false);
+	    emlist.splice(i,1);  //remove element i;
+	    Session.set(alst[aidx],emlist);
+	    return;
+	  }
+	}
+      }
+      console.log("ERROR: Removed email address id not found!");	
+    },
     'click #composeDone': function () 
       {
        var rawMessage;

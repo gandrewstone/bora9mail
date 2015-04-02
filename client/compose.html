@@ -1,10 +1,34 @@
 <template name="compose">
   <!--{{#if showing "compose"}}-->
+  <BR><BR>
   <div>
-  <table class="composeTo"><tr><td class="smallest">To: </td>
+    <table>
+      <tr>
+	<td class="FieldName">To: </td>
+	<td class="composeField">
+	  {{#each toUser}}
+            <div class="toAddr {{typ}}" id={{_id}}>{{{toDisplay}}}{{{showCloseX _id}}};
+	      <!--<img class="closeX" id={{_id}} src="tinyx.png"/>-->
+	    </div>
+	  {{/each}}
+	   <span class="composeInput">
+	     <INPUT TYPE=TEXT id="composeToInput"/> </span> </td></tr>
+      <tr>
+	<td class="FieldName">CC: </td>
+	<td class="composeField">
+	  {{#each ccUser}}
+            <div class="toAddr {{typ}}" id={{_id}}>{{{toDisplay}}}
+	      {{{showCloseX _id}}}
+	      <!--<img class="closeX" id={{_id}} src="tinyx.png"/>-->
+	    </div>
+	  {{/each}}
+	   <span class="composeInput">
+	     <INPUT TYPE=TEXT id="composeCCInput"/>  </span></td></tr>
+    </table> 
+<!--  <table class="composeTo"><tr><td class="smallest">To: </td>
   {{#each toUser}}
   <td class="smallest">
-  {{{toUserDisplay name address}}}
+  <p class={{typ}}>{{{toUserDisplay name address}}}</p>
   </td>
   {{/each}}
   <td class="biggest">
@@ -18,7 +42,7 @@
   {{/each}}
   <td class="biggest">
   <INPUT TYPE=TEXT id="composeCCInput"/>
-  </td></tr></table>
+  </td></tr></table>  -->
 
   <table class="composeSubject"><tr>
     <td class="smallest">Subject:</td>
