@@ -32,9 +32,48 @@ td.summaryCheckBoxTd {
   cursor:default;
 }
 
-.composeTo {
-  width: 99%;
+.composeField {
+  border:1px solid indigo;
+  border-radius: 10px;
+  background-color: lavenderblush;
+  width: 100%;
+  padding: 5px 10px;
 }
+
+.composeField div {
+  font-size:80%;
+  float: left;
+  padding-top: 5px;
+  padding-right: 5px;
+}
+
+.FieldName {
+  float: left;
+  font-family: Arial, Sans-serif;
+  font-size: 16px;
+  font-weight: bold;
+  padding-right: 20px;
+  padding-top: 10px;
+  vertical-align: middle;
+}
+
+.composeField .invalid, .composeField .baduser {
+  color: red;
+  text-decoration: underline;
+}
+
+.composeField .rfc822, .composeField .local {
+  color: green;
+  text-decoration: underline;
+}
+
+.composeInput { 
+  position: relative;
+  min-width: 300px;
+  padding-top: 0px;
+  float: left;
+}
+
 .composeCC {
   width: 99%;
 }
@@ -43,7 +82,7 @@ td.summaryCheckBoxTd {
 }
 
 table td.smallest {
-  white-space:nowrap
+  white-space:nowrap;
 }
 
 table td.biggest {
@@ -53,10 +92,15 @@ table td.biggest {
 #composeCCInput {
   display: block;
   width: 100%;
+  background-color: mintcream;
+  border-radius: 5px;
 }
+
 #composeToInput {
-  display: block;
+  display: inline;
   width: 100%;
+  background-color: ivory;
+  border-radius: 5px;
 }
 
 #composeSubjectInput {
