@@ -76,7 +76,7 @@ formatAndEncryptMessage = function(toUsers, ccUsers, from,subject, msgtext,signi
 // for special purposes (such as dummy objects).
 function getId() 
 {
-  var nextId = Session.get("emailAddressId") | 4;
+  var nextId = Session.get("emailAddressId") || 4;
   Session.set("emailAddressId",++nextId);
   return nextId;
 }
@@ -105,16 +105,17 @@ EmailAddress.prototype.toString = function(htmlformat)
   if ((this.typ=="local") || (this.typ == "rfc822"))
   {
     console.log("rfc822 " + this.name + " | " + this.address);
-    var uaddr = this.address.split('@');
+    var atpos = this.address.lastIndexOf('@');
+    var uaddr = this.address.slice(0,atpos);
     if (this.name.length > 0)
     {
       retstr = this.name + lt;  //<, rendered as HTML
       tail = gt;                  //>, rendered as HTML
     }
-      retstr += uaddr[0];
+      retstr += uaddr;
     if (this.tag.length > 0)
-      retstr += '+' + tag;
-    retstr += '@' + uaddr[1] + tail;
+      retstr += '+' + this.tag;
+    retstr += this.address.slice(atpos) + tail;
     console.log("rfc822 = " + retstr);
   }
   else
@@ -224,7 +225,9 @@ OKTEXT = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz" +
 //Returns [errcode,pos] where errcode is one of:
 //"Mismatch","NoClose","NoAt","NoAtom","NoServer","NoAngle", "NoFirst" or "Done"
 function stdEmailAddrCheck(strg) {
-  var result = ["OK",-1];  //return first illegal character and its position
+  var pieces = {fullstring:strg, comments:[], displayname:"",
+	       username:"", server:""};
+  var names = [];
   var str = strg.trim();
   var start = 0;
   var idx, idx2;
@@ -237,11 +240,15 @@ function stdEmailAddrCheck(strg) {
       do
       {
 	idx= parseComment(str.slice(start));
+	if (idx)
+	  pieces.comments.push(str.slice(start,start+idx));
 	idx += parseWS(str.slice(start+idx));
 	start += idx;
       } while(idx);  //parse all leading comments and whitespace
       idx2 = parseQString(str.slice(start));  //parse a quoted-string
-      if (idx2==0)  //No quoted-string - parse regular text
+      if (idx2)
+	names.push(str.slice(start,start+idx));
+      else  //No quoted-string - parse regular text
       {
 	while ((start+idx2<str.length) && 
 	       (OKTEXT.indexOf(str.charAt(start+idx2)) != -1))
@@ -252,94 +259,145 @@ function stdEmailAddrCheck(strg) {
 	{
 	  start += idx2+1;
 	  dotatom=true;
+	  pieces.username = str.slice(start,start+idx2+1);
 	  break;  //In a dot-atom
 	}
+	if (idx2)
+	  names.push(str.slice(start,start+idx2));
       }
       start+=idx2;
       if (start >= str.length)
-	return ["NoAt",str.length];
+      {
+	pieces.displayname = names.join(" ");
+	return ["NoAt",str.length,pieces];
+      }
     } while (idx2);  //look for another display name word
     console.log("Parsed Comments and Displayname phrase up to position "+start);
-    if (str.charAt(start)=='<') {  //starting angle-addr
-      requiregt = true;
-      console.log("Found Angle Bracket");
-      start++;
-      if (start >= str.length)
-	return ["NoAt",str.length];
-      start+=parseWS(str.slice(start));
-      start+=parseComment(str.slice(start));
-      start+=parseWS(str.slice(start));
-      idx2 = parseQString(str.slice(start));
-      if (idx2==0)  //not a quote-string, so its a dot-atom
-	dotatom = true;
-      else start += idx2;
-    }
-    else if (!dotatom)
+    if (!dotatom)
     {
-     if (cnt>2)  //if a Displayname was parsed, '<' is required
-      {
-	console.log("Missing Angle bracket at position " +start);
-	return ["NoAngle",start];
+      if (str.charAt(start)=='<') {  //starting angle-addr
+	requiregt = true;
+	console.log("Found Angle Bracket");
+	start++;
+	if (start >= str.length)
+	  return ["NoAt",str.length];
+	start+=parseWS(str.slice(start));
+	do
+	{
+	  idx= parseComment(str.slice(start));
+	  if (idx)
+	    pieces.comments.push(str.slice(start,start+idx));
+	  idx += parseWS(str.slice(start+idx));
+	  start += idx;
+	} while(idx);  //parse all comments and whitespace
+	idx2 = parseQString(str.slice(start));
+	if (idx2)
+	{
+	  pieces.username = str.slice(start,start+idx);
+	  start += idx2;
+	}
+	else  //not a quote-string, so its a dot-atom
+	  dotatom = true;
       }
-      else if (cnt==1) //First non-comment character is not valid
+      else
       {
-	console.log("Missing a user address at position " + start);
-	return ["NoFirst",start];
+	if (cnt>2)  //if a Displayname was parsed, '<' is required
+	{
+	  console.log("Missing Angle bracket at position " +start);
+	  pieces.displayname = names.join(" ");
+	  return ["NoAngle",start,pieces];
+	}
+	else if (cnt==2) //exactly one word found - set as username
+	  pieces.username = names[0];
+	else  //First non-comment character is not valid
+	{
+	  console.log("Missing a user address at position " + start);
+	  return ["NoFirst",start,pieces];
+	}
       }
     }
+    //don't use else cuz dotatom may be set within the 'if' portion above
     if (dotatom)  //handle dot-atom
     {
       idx = parseDotAtom(str.slice(start));
+      pieces.username += str.slice(start,start+idx);
       start +=idx;
       if (start == str.length)
-	return ["NoAt",start];
+	return ["NoAt",start,pieces];
       if (idx==0) {
 	console.log("Missing expected dot-atom at position "+ start);
-	return ["NoAtom",start];
+	return ["NoAtom",start,pieces];
       }
     }
 	
     start += parseWS(str.slice(start));
-    start+=parseComment(str.slice(start));
-    start+=parseWS(str.slice(start));
+    do
+    {
+      idx= parseComment(str.slice(start));
+      if (idx)
+	pieces.comments.push(str.slice(start,start+idx));
+      idx += parseWS(str.slice(start+idx));
+      start += idx;
+    } while(idx);  //parse all comments and whitespace
 
     //If we reached this point, we should be looking for the server part.
     console.log("Finished parsing user part at position "+ start);
   
     if (str.charAt(start) != '@') {
       console.log("Expected '@' missing at position "+start);
-      return ["NoAt",start];
+      return ["NoAt",start,pieces];
     }
     start++;
     start += parseWS(str.slice(start));
-    start+=parseComment(str.slice(start));
-    start+=parseWS(str.slice(start));
+    do
+    {
+      idx= parseComment(str.slice(start));
+      if (idx)
+	pieces.comments.push(str.slice(start,start+idx));
+      idx += parseWS(str.slice(start+idx));
+      start += idx;
+    } while(idx);  //parse all comments and whitespace
     //TODO:  if str.charAt(start)== '[', parse literal server addr.
     if ((idx = parseDotAtom(str.slice(start))) == 0)
     {
       console.log ("Server dot-atom not found at position "+start);
-      return ["NoServer",start];  // a server addr is required
+      return ["NoServer",start,pieces];  // a server addr is required
     }
+    pieces.server = str.slice(start,start+idx);
     start += idx;
     start += parseWS(str.slice(start));
-    start+=parseComment(str.slice(start));
+    do
+    {
+      idx= parseComment(str.slice(start));
+      if (idx)
+	pieces.comments.push(str.slice(start,start+idx));
+      idx += parseWS(str.slice(start+idx));
+      start += idx;
+    } while(idx);  //parse all comments and whitespace
     if (requiregt) {
       if (str.charAt(start)!='>') {
 	console.log("Closing angle bracket missing at position "+start);
-	return ["NoClose",start];
+	return ["NoClose",start,pieces];
       }
       start++;
       start += parseWS(str.slice(start));
-      start+=parseComment(str.slice(start));
+      do
+      {
+	idx= parseComment(str.slice(start));
+	if (idx)
+	  pieces.comments.push(str.slice(start,start+idx));
+	idx += parseWS(str.slice(start+idx));
+	start += idx;
+      } while(idx);  //parse all comments and whitespace
     }
     //We're done, or stuck on a bad character
-    return ["Done",start]
+    return ["Done",start,pieces];
   }
   catch (e) {
     console.log(e.message);
     if (e.message.indexOf("Mismatched") != -1)
       console.log ("No string or comment close character detected");
-      return ['Mismatch',str.length];
+      return ['Mismatch',str.length,pieces];
   }
 }
 
@@ -364,7 +422,7 @@ function earlySeparator(rslt,p,str)
   return false;
 }
     
-function lateSeparator(rslt,p,str)
+function lateSeparator(rslt,p,str,parsing)
 {
   console.log("lateSeparator");
   if (p == str.length)
@@ -372,13 +430,13 @@ function lateSeparator(rslt,p,str)
   else
   {
     console.log("Adding email " + str.slice(0,p));
-    rslt.push(stdEmail(str.slice(0,p)));
+    rslt.push(stdEmail(parsing));
     return true;
   }
   return false;
 }
   
-function noAction(rslt,p,str)
+function noAction(rslt,p,str,parsing)
 {
   console.log("noaction");
   return false;
@@ -410,9 +468,10 @@ parseAddrField = function(toStr,entire)
     entire=false;
 
   do {
+    repeat=false;
     parsed = stdEmailAddrCheck(toStr);
     console.log(parsed + "   " +toStr);
-    if (parseActions[parsed[0]](result,parsed[1],toStr.trim()))
+    if (parseActions[parsed[0]](result,parsed[1],toStr.trim(),parsed[2]))
     {
       toStr = toStr.slice(parsed[1]+1);
       console.log("new string: "+toStr );
@@ -430,7 +489,7 @@ parseAddrField = function(toStr,entire)
     if (parsed[0] == "Done")
     {
       console.log("Adding email " + toStr);
-      result.push(stdEmail(toStr));
+      result.push(stdEmail(parsed[2]));
       toStr = "";
     }
     else
@@ -534,7 +593,15 @@ function findEmail(to) {
   }
   else 
   {
-    var userRec = UserRecords.findOne({username: to});
+    var usr = to;
+    var pos;
+    var tag="";
+    if ((usr.charAt(0) != '"') && ((pos = usr.indexOf('+')) != -1))
+    {
+      tag = usr.slice(pos+1);
+      usr = usr.slice(0,pos);
+    }
+    var userRec = UserRecords.findOne({username: usr});
     if (userRec == null) userRec = UserRecords.findOne({name: to});
     if (userRec != null)
     {
@@ -542,8 +609,8 @@ function findEmail(to) {
       if (userRec.publickey != null)
         console.log("with an encryption key");
       //TODO: change 'to' to userRec.DisplayName
-      return new EmailAddress("local",to,userRec.username + "@" + DNSname, "",
-			      userRec.publickey, getId());
+      return new EmailAddress("local",userRec.name || "",userRec.username + 
+			      "@" + DNSname, tag, userRec.publickey, getId());
     }
     else
     {
@@ -554,6 +621,63 @@ function findEmail(to) {
   }
 }
 
+//This function should only be called after the email address is vetted
+// (no illegal characters and proper format) and contains a domain part.
+function stdEmail(pcs) {
+  //var nameDomain = to.split("@");
+  //var nameUser = nameDomain[0].split('<');
+  //nameDomain = nameDomain[1].split('>');
+  //console.log(nameUser);
+
+  //Find tags in username.  If username is in quotes, then assume '+' is part
+  // of name, and not a tag delimiter.
+  var usr = pcs.username;
+  var pos;
+  var tag="";
+  console.log(pcs);
+  if ((usr.charAt(0) != '"') && ((pos = usr.indexOf('+')) != -1))
+  {
+    //console.log("+ at position "+pos);
+    tag = usr.slice(pos+1);
+    //console.log("Extracting Tag"+tag);
+    usr = usr.slice(0,pos);
+    //console.log("for user"+usr);
+  }
+  if (pcs.server == DNSname)  // Its a local user, look up
+  {
+    var userRec = null;
+    if (usr)
+      userRec = UserRecords.findOne({username: usr});
+    if (userRec != null)
+    {
+      console.log(usr + " is a local user");
+      if (userRec.publickey != null)
+        console.log("with an encryption key");
+      //TODO: change to pcs.displayname || userRec.DisplayName
+      return new EmailAddress("local", pcs.displayname || userRec.name, usr +
+			      '@'+ pcs.server, tag, userRec.publickey, getId());
+    }
+    else
+    {
+      DisplayError("User " + usr + " is unknown!");
+      return new EmailAddress("baduser", pcs.displayname,
+			      usr +'@' + pcs.server,
+			      tag, null, getId());
+    }
+  }
+  else
+  {
+    console.log(pcs.fullstring +" is a RFC822 (classical) style email address");
+    //TODO:  check if this address is in the address book.  if so, use address
+    //       book display name.
+    //TODO:  Send this to a validation routine first which will set the typ 
+    //  field to either 'rfc822' or 'invalid'
+    return new EmailAddress("rfc822", pcs.displayname,
+			    usr +'@' +pcs.server,
+			    tag, null, getId());
+  }
+}
+/*
 //This function should only be called after the email address is vetted
 // (no illegal characters and proper format) and contains a domain part.
 function stdEmail(to) {
@@ -594,8 +718,8 @@ function stdEmail(to) {
 			    "", null, getId());
   }
 }
-
-    
+*/
+/*    
 parseResolveTo = function(toString)
   {
   var result = [];
@@ -674,7 +798,7 @@ parseResolveTo = function(toString)
 
   return [result,toString];
   }
-
+*/
   Template.compose.helpers(
     {
     toUser: function()
@@ -728,14 +852,18 @@ function processAddrField(str,field,entire)
   Template.compose.events({
     "keyup #composeToInput": function(event) 
     {
+      //If the enter key is pressed, process the whole line.  Otherwise just
+      // the bits ending with separators.
       event.currentTarget.value = processAddrField(event.currentTarget.value,
-						   "composeToUser",false);
+	   "composeToUser",(event.keyCode == 13));
 
     },
     "keyup #composeCCInput": function(event) 
     {
+      //If the enter key is pressed, process the whole line.  Otherwise just
+      // the bits ending with separators.
       event.currentTarget.value = processAddrField(event.currentTarget.value,
-						   "composeCCUser",false);
+	   "composeCCUser",(event.keyCode == 13));
 
     },
     "blur #composeToInput": function(event)
@@ -820,16 +948,17 @@ function processAddrField(str,field,entire)
        try { rawMessage = CKEDITOR.instances.messageEditor.getData(); }
        catch(err) { rawMessage = document.getElementById('messageEditor').value; }  // oops ckeditor had a problem, used raw textbox
 
-       var rawTo = document.getElementById('composeToInput').value;
+       //var rawTo = document.getElementById('composeToInput').value;
        var processedTo = Session.get("composeToUser");
-       var rawCC = document.getElementById('composeCCInput').value;
+       //var rawCC = document.getElementById('composeCCInput').value;
        var processedCC = Session.get("composeCCUser");
        var rawSubject = document.getElementById('composeSubjectInput').value;
 
        var from = Session.get("username") + "@" + DNSname;
        var inreplyto = null;
+       var myself = UserRecords.findOne({username: Session.get("username")});
 
-       var tmp = parseResolveTo(rawTo + ",");
+       /*var tmp = parseResolveTo(rawTo + ",");
        var tos = processedTo.concat(tmp[0]);  // Get the last one
        if (tmp[1])
          {
@@ -841,7 +970,7 @@ function processAddrField(str,field,entire)
          {
          // TODO: I can't figure out one of the addresses
          }
-       myself = parseResolveTo(from + ",")[0];
+*/
        var message = formatAndEncryptMessage(tos, ccs, from,rawSubject, rawMessage,null,myself.publickey);
        // Passing null into "to", means to store in drafts, remember the full to line is stored in the encrypted msg
        Meteor.call("sendmail",null,from,inreplyto,message.enckey,message.subject,message.preview, message.message,message.id,
@@ -860,16 +989,16 @@ function processAddrField(str,field,entire)
        try { rawMessage = CKEDITOR.instances.messageEditor.getData(); }
        catch(err) { rawMessage = document.getElementById('messageEditor').value; }  // oops ckeditor had a problem, used raw textbox
 
-       var rawTo = document.getElementById('composeToInput').value;
+       //var rawTo = document.getElementById('composeToInput').value;
        var processedTo = Session.get("composeToUser");
-       var rawCC = document.getElementById('composeCCInput').value;
+       //var rawCC = document.getElementById('composeCCInput').value;
        var processedCC = Session.get("composeCCUser");
        var rawSubject = document.getElementById('composeSubjectInput').value;
 
        var from = Session.get("username") + "@" + DNSname;
        var inreplyto = null;
 
-       var tmp = parseResolveTo(rawTo + ",");
+       /*var tmp = parseResolveTo(rawTo + ",");
        var tos = processedTo.concat(tmp[0]);  // Get the last one
        if (tmp[1])
          {
@@ -881,6 +1010,7 @@ function processAddrField(str,field,entire)
          {
          // TODO: I can't figure out one of the addresses
          }
+	 */
        var destinations = tos.concat(ccs);
 
        //console.log("Meteor.userId():" + Meteor.userId());
