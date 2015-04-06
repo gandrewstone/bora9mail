@@ -1,16 +1,5 @@
-function setSessionDefaults()
-  {
-  Session.setDefault("bitcoinEmailSpamAutopayAmount",100);
-  Session.setDefault("bitcoinEmailSendTipAmount",5000);
-  Session.setDefault("emailSendTipDuration",60*24*7);  // 7 days in minutes  
-  }
+PERMISSIVE = true;
 
-function setSessionLocals(dataObj)
-  {
-  Session.set("bitcoinEmailSpamAutopayAmount",dataObj.bitcoinEmailSpamAutopayAmount);
-  Session.set("bitcoinEmailSendTipAmount",dataObj.bitcoinEmailSendTipAmount);
-  Session.set("emailSendTipDuration",dataObj.emailSendTipDuration);
-  }
 
 function login(username,password)
   {
@@ -19,13 +8,17 @@ function login(username,password)
       // and will be encrypted with this password
       var userRecDataKey = sjcl.codec.base64.fromBits(sjcl.hash.sha256.hash(username + ":" + password + ":" + SALT));
 
-      loginoutCleanup();
-      setSessionDefaults();
-      Session.set("username", username);  // We may need this later to receive normal email
-      Session.set("password", password);  // We may need this later to receive normal email
-      Session.set("recHandle", userRecordHandle);
-      var serverPassword = createServerPassword(username, password);
-      Session.set("serverPassword",serverPassword);
+      //loginoutCleanup();
+      //setSessionDefaults();
+      globals.username = username;
+      globals.password = password;
+      globals.userRecordHandle = userRecordHandle;
+      globals.serverPassword = createServerPassword(username, password);
+      //Session.set("username", username);  // We may need this later to receive normal email
+      //Session.set("password", password);  // We may need this later to receive normal email
+      //Session.set("recHandle", userRecordHandle);
+      //var serverPassword = createServerPassword(username, password);
+      //Session.set("serverPassword",serverPassword);
 
       var encdata = localStorage.getItem(userRecordHandle);
 
@@ -33,13 +26,13 @@ function login(username,password)
       if ((encdata == null)||(encdata=="null")) // No local data.  We will check the server for this user
         {
         console.log("ask the server");
-        Meteor.call("userLogin",username,serverPassword,function (error,result) { if (error) DisplayError(error); else loginGood(userRecDataKey,result); });
+        Meteor.call("userLogin",globals.username,globals.serverPassword,function (error,result) { if (error) DisplayError(error); else loginGood(userRecDataKey,result); });
         return;
         }
       else
         {
         console.log("using locally stored data");
-        Meteor.call("clientUserLogin",username,serverPassword,
+        Meteor.call("clientUserLogin",globals.username,globals.serverPassword,
           function (error,result) 
             { 
             if (error) DisplayError(error);
@@ -54,7 +47,7 @@ function login(username,password)
 
 function loginGood(userRecDataKey,encdata)
 {
-    console.log("login ok");
+    console.log("loginGood Fn");
     if (encdata == null)  // Bad login
     {
         //console.log("oh no");
@@ -77,9 +70,16 @@ function loginGood(userRecDataKey,encdata)
         { 
             var dataObj = JSON.parse(data);
             Session.set("userData",dataObj);
-            setSessionLocals(dataObj);
-            ClearError();
-            SetPage("main");     
+            //ClearError();
+
+            // Ok we logged in.  So head to the appropriate page
+            if (profileNeedsWork()) 
+              { 
+              ShowProfilePage(dataObj);
+              }
+            else SetPage("main");
+            Session.set("loggedIn",true);
+            hide("signup");
         }
         catch(e)  // JSON parsing issue
         {
@@ -87,13 +87,14 @@ function loginGood(userRecDataKey,encdata)
             DisplayError("Unknown username or incorrect password.");
         }
     }
+ 
 }
 
 
   Template.login.events({
     "click #siteIntroIcon": function (event)
       {
-      SetPage("siteIntro");
+      toggle("siteIntro");
       },
     "click #username": function ()
       {
@@ -104,8 +105,7 @@ function loginGood(userRecDataKey,encdata)
       },
     "click #signup": function ()
       {
-      console.log("sign up");
-      SetPage("signup");
+      show("signup");
       },
     "click #login": function ()
       {
@@ -117,26 +117,39 @@ function loginGood(userRecDataKey,encdata)
       }
 });
 
-
+function ith(num)
+  {
+  if (num == 1) return "1st";
+  if (num == 2) return "2nd";
+  if (num == 3) return "3rd";
+  else return "" + num + "th";
+  }
 
 Template.signupPage.helpers({
   serverDNSname: DNSname,
-  usernameValidity: function () { return Session.get("usernameValidity"); }
   });
 
 Template.signupPage.events({
-   "keyup #signup_username": function() 
+   "keyup #signup_username": function(event) 
   {
-  console.log("keypress");
-  var name = document.getElementById('signup_username').value;
+  var name = event.target.value;
+  //var name = document.getElementById('signup_username').value;
   if (name)
     {
-    var exists = Meteor.call("checkUser",name, function(error, result)
+    Meteor.call("checkUsernameAvailability",name, function(error, result)
       {
       if (error == null)
         {
-        if (result) Session.set("usernameValidity",name + "@" + DNSname + " already exists");
-        else Session.set("usernameValidity",name + "@" + DNSname + " is available");
+        if (!result[1]) 
+          {
+          Session.set("usernameValidity",name + "@" + DNSname + " is " + result[0]);
+          Session.set("usernameAccepted", false);
+          }
+        else 
+          {
+          Session.set("usernameValidity",name + "@" + DNSname + " is available");
+          Session.set("usernameAccepted", true);
+          }
         }
       else
         {
@@ -150,8 +163,61 @@ Template.signupPage.events({
     }
   //console.log(Template.signupPage.helpers.usernameValidity);
   },
+
+  "keyup #signup_password": function(event) 
+  {
+  var pw = event.target.value;
+  if ((pw == null)||(pw==""))
+    {
+    Session.set("passwordValidity", "");
+    Session.set("passwordAccepted", false);
+    return;
+    }
+  if (Session.get("usernameAccepted"))
+    {
+    var un = document.getElementById('signup_username').value;
+    if (pw.search(un) != -1)
+      {
+      Session.set("passwordValidity", "Seriously!?? You put your username in your password and you think that that's going to stay secret?");
+      Session.set("passwordAccepted", false);
+      return;
+      }
+    }
+  var common = passwords.indexOf(pw);
+  if (common != -1)
+    {
+    Session.set("passwordValidity", "Congratulations!  You picked the " + ith(common) + " most common password!");
+    Session.set("passwordAccepted", false);
+    return;    
+    }
+  if (pw.length < 8)
+    {
+    Session.set("passwordValidity", "A hacker will brute force this in about " + Math.pow(64,pw.length)/2 + " tries.");
+    Session.set("passwordAccepted", false);
+    return;
+    }
+
+
+  Session.set("passwordAccepted", true);
+  Session.set("passwordValidity","");
+  },
+
+
   "click #signupjoin": function()
   {
+    if (!Session.get("passwordAccepted") || !Session.get("usernameAccepted"))
+      {
+      if (!PERMISSIVE)
+        {
+        DisplayError("Invalid username or password");
+        return;
+        }
+      else
+        {
+        DisplayWarning("You username or password has issues.  Don't say I didn't warn you...");
+        }
+      }
+    
   console.log("JOIN");
   var username = document.getElementById('signup_username').value;
   var password = document.getElementById('signup_password').value;
@@ -176,13 +242,13 @@ Template.signupPage.events({
       DisplayError("Server connection error."); 
       return;
       }
-    if (result == false) 
+    else if (result == false) 
       { 
       DisplayError("Somebody beat you to it!  Try again."); 
-      deleteLocalUserData(username); 
+      deleteLocalUserData(username);   
       return; 
       }
-    login(username,password);
+    else login(username,password);
     }
   );
 

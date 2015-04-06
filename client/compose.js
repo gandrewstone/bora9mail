@@ -199,7 +199,7 @@ parseResolveTo = function(toString)
        var processedCC = Session.get("composeCCUser");
        var rawSubject = document.getElementById('composeSubjectInput').value;
 
-       var from = Session.get("username") + "@" + DNSname;
+       var from = globals.username + "@" + DNSname;
        var inreplyto = null;
 
        var tmp = parseResolveTo(rawTo + ",");
@@ -238,7 +238,7 @@ parseResolveTo = function(toString)
        var processedCC = Session.get("composeCCUser");
        var rawSubject = document.getElementById('composeSubjectInput').value;
 
-       var from = Session.get("username") + "@" + DNSname;
+       var from = globals.username + "@" + DNSname;
        var inreplyto = null;
 
        var tmp = parseResolveTo(rawTo + ",");

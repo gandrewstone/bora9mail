@@ -29,6 +29,26 @@ Meteor.startup(function () {
 });
 
 Meteor.methods({
+    checkUsernameAvailability: function (username)
+      {
+      up = username.toUpperCase();
+      console.log("up:" + up + "pn: " + preventedNames[1]);
+      if (up.indexOf(".")>=0) return ["no good -- remove the dot", false];
+      if (!/^[0-9a-zA-Z_]+$/.test(up)) return ["going to break some computer somewhere", false];
+      if (reservedNames.indexOf(up) >= 0) return ["reserved",false];
+      if (toosimpleNames.indexOf(up) >=0) return ["too simple", false];
+      if (preventedNames.indexOf(up) >=0) return ["mine", false];
+
+      console.log("looking for " + username);
+      if (UserRecords.findOne({username: username}) != null) 
+        {
+        console.log("found!");
+        // TODO delay to stop phishing for usernames
+        return ["exists", false];
+        }
+      return ["available", true];
+      },
+ 
   namecoinLookup: function (name) 
     {
     //return "zoo";

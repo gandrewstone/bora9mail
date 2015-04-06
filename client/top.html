@@ -1,0 +1,157 @@
+<head>
+  <title>Bora9Mail</title>
+  <script type="text/javascript" src="/ckeditor/ckeditor.js"></script>
+  <script type="text/javascript" src="/ckeditor/adapters/jquery.js"></script>
+  <script type="text/javascript" src="sjcl.js"></script>
+  <script type="text/javascript" src="ecc.js"></script>
+  <script type="text/javascript" src="bitcoinjs.js"></script>
+  <script type="text/javascript" src="jquery.min.js"></script>
+  <script type="text/javascript" src="qrcode.js"></script>
+
+</head>
+
+<body>
+{{> page}}
+</body>
+<!-- body>
+<div>
+  {{> login}}
+</div>
+<hr/><br>
+  {{> userInfo}}
+<hr/>
+  {{> messageCatalogLayout}}
+  <hr/>
+  {{> signupPage}}
+  <hr/>
+  {{> profilePage}}
+  <hr/>
+  {{> compose}}
+  {{> siteIntro}}
+  
+</body -->
+
+<template name="page">
+  <img id="logout" src="logout.svg"/>
+  {{> serverStatus}}
+  {{#if loggedIn}}
+        <img id="siteicon" src="siteicon.png" />
+        {{> userInfo }}
+        {{#if showPage "profile"}}
+          {{> profilePage}}
+        {{else}}
+          {{> messageCatalog}}
+        {{/if}}
+  {{else}}
+        {{> login}}
+  {{/if}}
+  
+  <br>{{warning}}
+  <br>{{error}}
+  <br>{{help}}
+  {{! > showUsers}}
+  <button class="clean">Clean</button>
+</template>
+
+<template name="serverStatus"> 
+  <div id="serverStatus">
+    <img id="serverBackground" src="internet-cloud.svg" />
+    <img id="serverCheckX" src={{serverStatus}} />
+  </div>
+</template>
+
+<template name="messagePage"> 
+  {{#with currentMessage}}
+    <br>To: {{personDisplay to}}
+    <br>From: {{personDisplay from}}
+    <br>Date: {{dateDisplay date}}
+    <br>Subject: {{subject}}
+    <br>Content:<br>
+    {{{message}}}
+  <button id="messagePageReply">reply</button>
+  <button id="messagePageBack">back</button>
+  {{/with}}
+</template>
+
+
+<template name="showUsers">
+  <table style="width:100%">
+  <tr>
+  <td>Name</td>
+  <td>Password</td>
+  <td>Public Key</td>
+  <td>Data</td>
+  </tr>
+   {{#each users}}
+  <tr>
+  <td>{{name}}</td>
+  <td>{{pass}}</td>
+  <td>{{publickey}}</td>
+  <td>{{encdata}}</td>
+  </tr>
+  {{else}}
+  <tr>
+  <td>No users</td>
+  </tr>
+  {{/each}} 
+  </table>
+</template>
+
+
+<template name="signupPage">
+    <table>
+    <tr>
+      <td>
+      {{#if session "usernameAccepted" false}}
+        <img src="check.svg" class="upAcceptedIcon"/>
+      {{else}}
+        <img src="x.svg" class="upAcceptedIcon"/>
+      {{/if}}  
+      </td>
+      <td>
+        <big><big><strong>username:</strong></big></big>
+        <br><INPUT TYPE=TEXT id="signup_username"/>@{{serverDNSname}}
+        <br>{{session "usernameValidity" ""}}
+        <br>This is your login and your default email address.
+      </td>
+    </tr>
+    <tr><td><br></td></tr>
+    <tr>
+      <td>
+        {{#if session "passwordAccepted" false}}
+          <img src="check.svg" class="upAcceptedIcon"/>
+        {{else}}
+          <img src="x.svg" class="upAcceptedIcon"/>
+        {{/if}}  
+      </td>
+      <td>
+        <big><big><strong>password:</strong></big></big>
+        <br><INPUT TYPE=TEXT id="signup_password"/>
+        <br>{{session "passwordValidity" ""}}
+        <br>This is never sent to the server and so your account CANNOT be recovered if you forget it.
+      </td>
+    </tr>
+    </table>
+    <br><button id="signupjoin">join</button>
+</template>
+
+
+<template name="login">
+  <img id="siteIntroIcon" src="qgrn.svg"/>
+  <div id="loginHeader">
+  <div id="loginLogo"><img align="middle" src="oval_small.png"/></div><div id="loginText"><h1>Bora9Mail</h1>
+  {{#if showing "signup"}}
+      {{> signupPage}}
+  {{else}}
+  username: <INPUT TYPE=TEXT autocomplete="on" id="username"/>password: <INPUT TYPE=PASSWORD autocomplete="on" id="password"/> <button id="login">login</button> <button id="signup">join</button>
+  {{/if}}
+  {{#if showing "siteIntro"}}
+  {{> siteIntro}}
+  {{/if}}
+  </div>
+  </div>
+</template>
+
+<template name="userInfo">
+  <div id="showProfile"><img id="myAvatar" src="{{avatar}}" /> {{username}} <img id="btcStack" src="btc.svg" />{{xbtBalance}} {{publicKey}} </div>
+</template>

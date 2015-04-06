@@ -16,14 +16,14 @@
       <div id="applyLabel"><img src="label.svg" /></div>
       <div id="deleteMessages"><img src="recycle.svg" /></div>
     {{/if}}
-    {{> labelList}}
+{{> labelList}}
     </div>
   </div>
   <div class="cleared"></div>
 </div>
 </template>
 
-<template name="labelList">
+<template name="zzlabelList">
   <table class="labelTable">
   {{#each messageLabels}}
     <tr class="{{labelStyle this}}" id="label.{{name}}"><td>{{name}}({{unread}})</td></tr>
@@ -34,7 +34,21 @@
   </table>
   <div id="labelAdd"><img id="labelAddImg" src="plus.svg" /></div>
 </template>
-  
+
+ <template name="labelList">
+  <div class="labelTable">
+<ul>
+{{#each messageLabels}}
+<li class="{{labelStyle this}}" id="label.{{name}}">{{name}}({{unread}})</li>
+{{/each}}
+  {{#if showing "addingLabel"}}
+    <li class="labelNormal"><INPUT TYPE=TEXT id="labelAddInput"/></li>
+  {{/if}}
+  </ul>
+  </div>
+  <div id="labelAdd"><img id="labelAddImg" src="plus.svg" /></div>
+</template>
+ 
 
 <template name="messageList">
   <table id="mailListTable">
@@ -48,7 +62,7 @@
   </tr>
 
   {{#each messages}}
-  <tr id="{{id}}" class="emailSummary" style="color:black">
+  <tr id="{{id}}" class="emailSummary" >
   <td class="summaryCheckBoxTd"><input class="summaryCheckBox" type="checkbox" id="{{id}}"/></td>
   <td class="emailSummaryfrom">{{personDisplay from}}</td>
   <td><strong>{{decrypt cipherkey subject}}</strong> - {{decrypt cipherkey preview}}</td>

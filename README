@@ -5,5 +5,9 @@ namecoin -daemon -server
 rm .meteor/local/db/mongod.lock
 
 
-7z a -tzip <outfile>.zip client public server README *.js *.css
-7z a -tzip -p<pw> -mem=AES256 <outfile>zip <infiles>
+7z a -tzip pics.zip client public server README *.js *.css
+mv pics.zip pics.txt
+7z a -tzip -p<pw> -mem=AES256 picsb5z.zip pic.txt
+scp picsb5z.zip stone@192.168.1.100:/me
+
+7z a -xr\!.meteor bora9mail.7z bora9mail

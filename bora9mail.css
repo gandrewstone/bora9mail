@@ -159,11 +159,11 @@ table td.biggest {
 }
 
 #mlwrapper {
-  margin-left: 200px;
+  margin-left: 210px;
 }
 #mlcontent {
   float: right;
-  width: 100%;
+  width: 98%;
   /* background-color: #CCF; */
 }
 
@@ -177,9 +177,9 @@ table td.biggest {
 
 /* Defines the inside of the message label sidebar */
 #mlsidebarContents {
-  float: left;
+/*  float: left;
   width: 200px;
-  margin-left: 10px;
+  margin-left: 10px; */
   /* background-color: #FFA; */
 }
 
@@ -199,20 +199,20 @@ table td.biggest {
 }
 
 .labelNormal {
-  background-color: #BBBBBB;
+  background-color: #eeeeff; /* #BBBBBB; */
 }
 
 .labelNormalDirty {
-  background-color: #DDDDDD;  
+  background-color: #eeeeff; /* #DDDDDD;   */
 }
 
 .labelNormalUnread {
-  background-color: #DDDDDD;
+  background-color: #eeeeff; /* #DDDDDD; */
   font-weight: bold;  
 }
 
 .labelNormalDirtyUnread {
-  background-color: #eeeeee;
+  background-color: #eeeeff; /* #eeeeee; */
   font-weight: bold;  
 }
 
@@ -273,4 +273,37 @@ body {
 #headerRule {
   width: 75%;
   color: purple;
+}
+
+.upAcceptedIcon {
+  width: 80px;
+  }
+
+.labelTable li:hover {
+  background: rgba(255,0,0,0.2);
+}
+.labelTable {
+  padding: 1em 0em 0em 0em;
+  align: left;
+}
+
+.labelTable li {
+  list-style-type: none;
+  display: block;
+  align: left;
+  position: relative;
+  left: -1em;
+  cursor: pointer;
+ }
+
+.mailListTable tr:hover {
+  background: rgba(255,0,0,0.2);
+}
+
+.emailSummary:hover {
+  background: rgba(255,0,0,0.2);
+}
+
+#showProfile:hover {
+  background: rgba(255,0,0,0.2);
 }

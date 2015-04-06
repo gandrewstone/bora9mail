@@ -30,6 +30,7 @@ Labels.allow({
 
 createLabel = function(userid, labelname)
   {
+  console.log("Added Label: " + userid + " Label: " + labelname);
   Labels.insert({user: userid, name: labelname, unread:0, dirty:0});
   }
 
@@ -98,7 +99,7 @@ Meteor.methods({
       },
     createUser: function (username, password, encdata)
       {
-      //if (UserRecords.findOne({name: username}) != null) return false;
+      if (UserRecords.findOne({username: username}) != null) return false;
       this.setUserId(username);
       UserRecords.insert({ username: username, password: password, publickey: null, encdata: encdata});
       createLabel(username, "inbox");
@@ -159,11 +160,12 @@ Meteor.methods({
 
     sendmail: function(to, from, inreplyto, enckey, subject,preview,message,id)
       {
+      var d = Date.now();
       if (!this.userId) { console.log("Send but no logged in user!"); return ERROR_NOT_LOGGED_IN; }
       if (to == null) // sending to drafts
         {
         console.log("Saving draft");
-        Messages.insert({ owner: this.userId, to: username, from: from, date: Date(), cipherkey: enckey, re: inreplyto, subject: subject, preview: preview, message: message, id: id, labels:["drafts"], read: false, starred: false, importance:0, });
+        Messages.insert({ owner: this.userId, to: username, from: from, date: d, cipherkey: enckey, re: inreplyto, subject: subject, preview: preview, message: message, id: id, labels:["drafts"], read: false, starred: false, importance:0, });
         return;
         }
 
@@ -180,13 +182,12 @@ Meteor.methods({
           }
 
         fromuserid = from.split("@")[0];   // From is the full address     
-
-        console.log("sending local mail to " + username);
+        console.log("sending local mail to " + username + " from: " + from);
         // I want 2 separate copies so that sender and receiver can both delete their own copy
-        Messages.insert({ owner: username,to: username, from: from, date: Date(), cipherkey: enckey, re: inreplyto, subject: subject, preview: preview, message: message, id: id, labels:["inbox"], read: false, starred: false, importance:0, });
+        Messages.insert({ owner: username,to: username, from: from, date: d, cipherkey: enckey, re: inreplyto, subject: subject, preview: preview, message: message, id: id, labels:["inbox"], read: false, starred: false, importance:0, });
         labelAddMessage(to.name,"inbox", id);
 
-        Messages.insert({ owner: this.userId,to: username, from: from, date: Date(), cipherkey: enckey, re: inreplyto, subject: subject, preview: preview, message: message, id: id+1, labels:["sent"], read: true, starred: false, importance:0, });
+        Messages.insert({ owner: this.userId,to: username, from: from, date: d, cipherkey: enckey, re: inreplyto, subject: subject, preview: preview, message: message, id: id+1, labels:["sent"], read: true, starred: false, importance:0, });
         
         labelAddMessage(fromuserid,"sent", id+1);
         }
