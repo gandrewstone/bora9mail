@@ -97,7 +97,7 @@ Template.messageCatalog.helpers(
 
 dumpLabels = function(username)
   {
-  var lbl = Labels.find({user: "username" }, {});
+  var lbl = Labels.find({user: username }, {});
   
   iter.forEach(function(x) { print("name: " + x.name + " unread: " + x.unread); });
   }
@@ -106,7 +106,7 @@ dumpLabels = function(username)
 Template.labelList.helpers({
   messageLabels: function()
     {
-    return Labels.find({user: Session.get("username") }, {});
+    return Labels.find({user: globals.username }, {});
     },
   labelStyle: function(obj)
     {
@@ -127,7 +127,7 @@ Template.labelList.helpers({
 });
 
 Template.labelList.events({
-   "click tr": function(event) 
+   "click li": function(event) 
      {
      var tr = event.currentTarget;
      var name = tr.id.split(".")[1];
@@ -172,9 +172,12 @@ Template.labelList.events({
     //else if (label == "drafts")
     //  return Messages.find({from: Session.get("username") + "@" + DNSname, labels: label}, {skip:Session.get("messageOffset"), limit: Session.get("userData").messagesPerPage }); 
     //else
-    console.log("Listing: owner: " + Session.get("username") + " label: " + label);  
-    return Messages.find({owner: Session.get("username"), labels: label}, {skip:Session.get("messageOffset"), limit: Session.get("userData").messagesPerPage });
-    
+//<<<<<<< HEAD
+//    console.log("Listing: owner: " + Session.get("username") + " label: " + label);  
+//    return Messages.find({owner: Session.get("username"), labels: label}, {skip:Session.get("messageOffset"), limit: Session.get("userData").messagesPerPage });
+//=======
+    console.log("Listing: owner: " + this.userId + "label: " + label);  
+    return Messages.find({owner: globals.username, labels: label}, {skip:Session.get("messageOffset"), limit: Session.get("userData").messagesPerPage });    
     },
     decrypt: function(key,data)
       {

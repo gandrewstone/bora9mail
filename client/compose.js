@@ -954,7 +954,7 @@ function processAddrField(str,field,entire)
        var processedCC = Session.get("composeCCUser");
        var rawSubject = document.getElementById('composeSubjectInput').value;
 
-       var from = Session.get("username") + "@" + DNSname;
+       var from = globals.username + "@" + DNSname;
        var inreplyto = null;
        var myself = UserRecords.findOne({username: Session.get("username")});
 
@@ -971,7 +971,7 @@ function processAddrField(str,field,entire)
          // TODO: I can't figure out one of the addresses
          }
 */
-       var message = formatAndEncryptMessage(tos, ccs, from,rawSubject, rawMessage,null,myself.publickey);
+       var message = formatAndEncryptMessage(processedTo, processedCC, from,rawSubject, rawMessage,null,myself.publickey);
        // Passing null into "to", means to store in drafts, remember the full to line is stored in the encrypted msg
        Meteor.call("sendmail",null,from,inreplyto,message.enckey,message.subject,message.preview, message.message,message.id,
          function(error,result) { if (error) DisplayError("server error"); else if (result != null) DisplayError(result); });
@@ -995,7 +995,7 @@ function processAddrField(str,field,entire)
        var processedCC = Session.get("composeCCUser");
        var rawSubject = document.getElementById('composeSubjectInput').value;
 
-       var from = Session.get("username") + "@" + DNSname;
+       var from = globals.username + "@" + DNSname;
        var inreplyto = null;
 
        /*var tmp = parseResolveTo(rawTo + ",");
@@ -1011,7 +1011,7 @@ function processAddrField(str,field,entire)
          // TODO: I can't figure out one of the addresses
          }
 	 */
-       var destinations = tos.concat(ccs);
+       var destinations = processedTo.concat(processedCC);
 
        //console.log("Meteor.userId():" + Meteor.userId());
        var copyToSentFolder = true;
@@ -1021,7 +1021,7 @@ function processAddrField(str,field,entire)
          if (to) // there can be nulls in the array
            {
            console.log("sending to " + to.address);
-           var message = formatAndEncryptMessage(tos, ccs, from,rawSubject, rawMessage,null,to.publickey);
+           var message = formatAndEncryptMessage(processedTo, processedCC, from,rawSubject, rawMessage,null,to.publickey);
            // You can pass null into from and inreplyto to increase anonymity.
            Meteor.call("sendmail",to,from,inreplyto,message.enckey,message.subject,message.preview, message.message,message.id,copyToSentFolder,
              function(error,result) 

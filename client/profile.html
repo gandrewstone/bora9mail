@@ -1,0 +1,44 @@
+<template name="profilePage">
+  <br><h2>Profile</h2>
+  <br>Classic Email address: {{emailAddress}}
+  <br>Namecoin Identity (<a href="onename.io">onename.io</a> uses u/[name], <a href="nameid.org">nameid</a> uses id/[name]) <INPUT TYPE=TEXT id="profileNamecoinIdentity" value={{namecoin}}>
+  <br>Gravatar <INPUT TYPE=TEXT id="profileGravatarIdentity" value="{{gravatar}}">
+  <br><img src="{{avatarUrl}}" height="128" width="128">
+  <br>Encryption Keys <button class="genAddr">Generate New Keys</button><br>
+  <table style="width:100%">
+  <tr>
+  <td>Identifier</td>
+  <td>Public Address</td>
+  <td>Secret Key</td>
+  </tr>
+  {{#each keys}}
+  <tr>
+  <td><INPUT TYPE=TEXT class=keyIdentifier value="{{identifier}}" /></td>
+  <td>{{pub}}</td>
+  <td>{{sec}}</td>
+  </tr>
+  {{else}}
+  <tr>
+  <td>No keys</td>
+  </tr>
+  {{/each}}
+  </table>  
+
+  <br><h2>Bitcoin</h2>
+
+  A Bitcoin wallet is stored on your browser, and optionally stored encrypted on the server.  The server does not have access to this wallet since your password is never sent to the server.  You remain in sole control and have sole responsibility for these funds.  The browser will periodically spend from this wallet for various mail-related micro-payments.
+
+  <br>SPAM prevention: when sending an email, autopay up to <INPUT TYPE=TEXT class="inputbits" id="bitcoinEmailSpamAutopayEntry" value={{bitcoinEmailSpamAutopayAmount}}> bits (<INPUT TYPE=TEXT class="inputusd" id="usdEmailSpamAutopayEntry" value={{usdEmailSpamAutopayAmount}}> USD) to send rapidly.
+  <br>Tipping: When choosing to include an email "tip" use <INPUT TYPE=TEXT class="inputbits" id="bitcoinEmailSendTipEntry" value={{bitcoinEmailSendTipAmount}}> bits (<INPUT TYPE=TEXT class="inputusd" id="usdEmailSendTipEntry" value={{usdEmailSendTipAmount}}> USD) by default (you can change this per send).  Default collection time  <INPUT TYPE=TEXT class="inputDuration" id="emailSendTipDuration" value={{timify "emailSendTipDuration"}}> (receiver has approximately this amount of time to collect the tip).
+  <br>Addresses can require a minimum "tip" or emails will be rejected.  This is often used on externally facing email addresses to eliminate spam.  Typically the recipient of such a message will then reply with a zero pay address if he/she is interested in conversing with you (this will happen automatically upon reply).
+  <br>
+
+  <br><h3>Wallet Information</h3>
+
+  Current Balance: {{xbtBalance}} bits.  Approximately ${{usdBalance}} US dollars.
+  <br>Add funds to your wallet by sending bitcoin to:  
+  <span id="publicQRcode"></span> {{bitcoinWalletPublicKey}} <button id="showQRcode">Show QR Code</button>
+  <br><strong>!!DO NOT SEND MORE THAN A FEW DOLLARS!!</strong>
+  <br>Access: 
+  <button id="profileCommit">done</button>
+</template>

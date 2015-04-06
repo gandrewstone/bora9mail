@@ -16,6 +16,9 @@
   });
 
   Meteor.subscribe("inbox");
+
+  globals = { username: null, password:null };
+
   Session.setDefault("btcBalance",0.0);
   Session.setDefault("featureCompose", false);
   Session.setDefault("messageOffset",0); // What index in the big list of messages?
@@ -26,9 +29,8 @@
         Session.set("error","");
         Session.set("help","");
 
-
         Session.set("userData",null);
-        Session.set("username",null);
+        //Session.set("username",null);
         Session.set("recHandle",null);
 
 	Session.set("btcBalance",0.0);
@@ -43,6 +45,11 @@
 
         Session.set("applyLabelMode",false); // mode where you are applying a label, not changing the view
         Session.set("addingLabel",false);  // Creating a new label mode
+
+        Session.set("usernameValidity","");
+        Session.set("usernameAccepted", false);
+        Session.set("passwordValidity", "");
+        Session.set("passwordAccepted", false);
     }
   
   Tracker.autorun(function(cnxn)
@@ -156,10 +163,12 @@ Template.registerHelper("showing",
       });
 
 Template.registerHelper("session",
-  function(key)
+  function(key, defaultChoice)
     {
     console.log("key: " + key); 
-    return Session.get(key); 
+    var tmp = Session.get(key); 
+    if (tmp == null || tmp == undefined) return defaultChoice;
+    return tmp;
     }
   );
 
@@ -170,7 +179,7 @@ Template.page.helpers({
     loggedIn: function ()
       {
       var tmp = Session.get("userData");
-      return (tmp != null);
+      return (tmp != null && Session.get("loggedIn"));
       },
     error: function ()
       {
@@ -190,6 +199,30 @@ Template.page.helpers({
       if (tmp != null) return tmp;
       return "";
       },
+
+  });
+
+  Template.page.events({
+   "click #logout": function() {
+     loginoutCleanup();
+
+   },
+   'click .clean': function () {
+    var userRecordHandle = Session.get("recHandle")
+    localStorage.removeItem(userRecordHandle);
+    Meteor.call("wipeMessages",[]);
+
+//var p, rp = {};  
+//p = { mode: "ccm", ks: 256 }; 
+//var json_sjcl = sjcl.encrypt("Secret Passphrase", "plaintext", p, rp);  
+//console.log(json_sjcl);
+//var plaintext = sjcl.decrypt("Secret Passphrase", json_sjcl, {}, rp);  
+//console.log(plaintext);
+
+    },
+  });
+
+Template.serverStatus.helpers({
     serverStatus: function()
       {
       var status = Meteor.status();
@@ -198,7 +231,7 @@ Template.page.helpers({
         console.log("RECONNECT");
         Session.set("cnxn", true);
         var serverPassword = Session.get("serverPassword");
-        var username = Session.get("username");
+        var username = globals.username; // Session.get("username");
         var userdata = Session.get("userData");
         if (username && serverPassword && userdata)  // I've already logged in, just reconnect so server knows I'm here
           {
@@ -273,7 +306,8 @@ Template.userInfo.helpers({
     },
   username:function()
   {
-  return Session.get("username") + "@" + DNSname;
+  //return Session.get("username") + "@" + DNSname;
+  return globals.username;
   },
   avatar: function()
   {

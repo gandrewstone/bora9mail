@@ -2,6 +2,35 @@ var findEccBackgrounder = 0;
 
 var usdPerBtc = "NA";
 
+
+function setSessionLocals(dataObj)
+  {
+  Session.set("bitcoinEmailSpamAutopayAmount",dataObj.bitcoinEmailSpamAutopayAmount);
+  Session.set("bitcoinEmailSendTipAmount",dataObj.bitcoinEmailSendTipAmount);
+  Session.set("emailSendTipDuration",dataObj.emailSendTipDuration);
+  }
+
+
+ShowProfilePage = function(userdata)
+  {
+  setSessionLocals(userdata);
+  SetPage("profile");
+  }
+
+profileNeedsWork = function()
+  {
+  var needsWork = false;
+  var userData = Session.get("userData");
+  if (userData.keys.length == 0) 
+    {
+    DisplayWarning("You need to create an encryption key");
+    needsWork = true;  // No encryption keys
+    }
+  // TODO: Also check balance
+
+  return needsWork;
+  }
+
 Meteor.call("usdPerBtc",function(error,result)
   {
   usdPerBtc = result;
@@ -120,7 +149,7 @@ Template.profilePage.events(
 	 for (i=0;i<5;i++)  // try 5 times and then delay to let other stuff happen
 	   {
 	     keys = ecc.generate(ecc.ENC_DEC);
-	     //console.log (keys.enc);
+	     console.log (keys.enc);
              if (keys.enc.substr(3,1)== "a") 
                { 
                Session.set("keys",keys); 
@@ -145,7 +174,7 @@ Template.profilePage.events(
 
 Template.profilePage.helpers(
   {
-  "emailAddress": function() { return Session.get("username") + "@" + DNSname; },
+  "emailAddress": function() { return globals.username + "@" + DNSname; },
   "namecoin": function () 
     {
     return Session.get("userData").namecoin;
@@ -192,6 +221,7 @@ Template.profilePage.helpers(
     },
   });
 
+/*
 Template.profilePage.rendered = function ()
   {
     var obj = document.getElementById("publicQRcode");
@@ -200,11 +230,12 @@ Template.profilePage.rendered = function ()
     qrcode.makeCode("bitcoin:" + bitcoinFns.depositAddress(Session.get("userData")) + "?label=" + AppName);
     return "";
   };
+*/
 
 Template.profilePage.keys = function () 
   { 
     var userData = Session.get("userData");
     var keys = userData.keys;
-    console.log(JSON.stringify(userData));
+    //console.log(JSON.stringify(userData));
     return keys;
   }
