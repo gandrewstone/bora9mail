@@ -16,7 +16,6 @@
   });
 
   Meteor.subscribe("inbox");
-
   globals = { username: null, password:null };
 
   Session.setDefault("btcBalance",0.0);
@@ -163,6 +162,7 @@ Template.registerHelper("showing",
       });
 
 Template.registerHelper("session",
+
   function(key, defaultChoice)
     {
     console.log("key: " + key); 

@@ -98,7 +98,6 @@ Template.messageCatalog.helpers(
 dumpLabels = function(username)
   {
   var lbl = Labels.find({user: username }, {});
-  
   iter.forEach(function(x) { print("name: " + x.name + " unread: " + x.unread); });
   }
 
@@ -127,6 +126,7 @@ Template.labelList.helpers({
 });
 
 Template.labelList.events({
+
    "click li": function(event) 
      {
      var tr = event.currentTarget;

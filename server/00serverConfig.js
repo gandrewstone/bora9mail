@@ -1,13 +1,13 @@
 NAMECOIN_OPTIONS = {
   host: 'localhost',
   port: 8336,
-  user: 'imoenes',
-  pass: 'opennamesystem'
+  user: 'username',
+  pass: 'thisisnotmypassword'
 };
 
 BITCOIN_OPTIONS = {
   host: 'localhost',
   port: 5835,
-  user: 'imoenes',
-  pass: 'ckaDKedVME'
+  user: 'username',
+  pass: 'thisisnotmypassword'
 };

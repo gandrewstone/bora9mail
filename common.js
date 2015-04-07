@@ -53,7 +53,6 @@ dateDisplay = function (date)
   return "" + stringMonth[date.getMonth()] + " " + date.getDate(); ;
   }
 
-
 personDisplay = function (person)
   {
   return person;
@@ -114,7 +113,6 @@ storeLocalUserData = function(userdata, username, password)
   {
   if (username==null) username = globals.username; //username = Session.get("username");
   if (password==null) password = globals.password; //password = Session.get("password");  // Grab the user's password from the session if available
- 
   var userRecDataKey = sjcl.codec.base64.fromBits(sjcl.hash.sha256.hash(username + ":" + password + ":" + SALT));
   var encdata =  sjcl.encrypt(userRecDataKey, JSON.stringify(userdata));
 

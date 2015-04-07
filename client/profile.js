@@ -2,7 +2,6 @@ var findEccBackgrounder = 0;
 
 var usdPerBtc = "NA";
 
-
 function setSessionLocals(dataObj)
   {
   Session.set("bitcoinEmailSpamAutopayAmount",dataObj.bitcoinEmailSpamAutopayAmount);
@@ -149,7 +148,7 @@ Template.profilePage.events(
 	 for (i=0;i<5;i++)  // try 5 times and then delay to let other stuff happen
 	   {
 	     keys = ecc.generate(ecc.ENC_DEC);
-	     console.log (keys.enc);
+	     //console.log (keys.enc);
              if (keys.enc.substr(3,1)== "a") 
                { 
                Session.set("keys",keys); 
@@ -222,6 +221,8 @@ Template.profilePage.helpers(
   });
 
 /*
+=======
+>>>>>>> 671182beb1443c67c30ebd24a127a32e8b3d1717
 Template.profilePage.rendered = function ()
   {
     var obj = document.getElementById("publicQRcode");
@@ -230,12 +231,14 @@ Template.profilePage.rendered = function ()
     qrcode.makeCode("bitcoin:" + bitcoinFns.depositAddress(Session.get("userData")) + "?label=" + AppName);
     return "";
   };
+<<<<<<< HEAD
 */
 
 Template.profilePage.keys = function () 
   { 
     var userData = Session.get("userData");
     var keys = userData.keys;
+
     //console.log(JSON.stringify(userData));
     return keys;
   }

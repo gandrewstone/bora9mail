@@ -1,5 +1,18 @@
 PERMISSIVE = true;
 
+function xxxsetSessionDefaults()
+  {
+  Session.setDefault("bitcoinEmailSpamAutopayAmount",100);
+  Session.setDefault("bitcoinEmailSendTipAmount",5000);
+  Session.setDefault("emailSendTipDuration",60*24*7);  // 7 days in minutes  
+  }
+
+function xxxsetSessionLocals(dataObj)
+  {
+  Session.set("bitcoinEmailSpamAutopayAmount",dataObj.bitcoinEmailSpamAutopayAmount);
+  Session.set("bitcoinEmailSendTipAmount",dataObj.bitcoinEmailSendTipAmount);
+  Session.set("emailSendTipDuration",dataObj.emailSendTipDuration);
+  }
 
 function login(username,password)
   {
@@ -47,7 +60,7 @@ function login(username,password)
 
 function loginGood(userRecDataKey,encdata)
 {
-    console.log("loginGood Fn");
+    console.log("login ok");
     if (encdata == null)  // Bad login
     {
         //console.log("oh no");
@@ -87,7 +100,6 @@ function loginGood(userRecDataKey,encdata)
             DisplayError("Unknown username or incorrect password.");
         }
     }
- 
 }
 
 
@@ -116,6 +128,7 @@ function loginGood(userRecDataKey,encdata)
       login(username,password);
       }
 });
+
 
 function ith(num)
   {
@@ -163,7 +176,6 @@ Template.signupPage.events({
     }
   //console.log(Template.signupPage.helpers.usernameValidity);
   },
-
   "keyup #signup_password": function(event) 
   {
   var pw = event.target.value;
@@ -253,6 +265,5 @@ Template.signupPage.events({
   );
 
  
-
   },
 });

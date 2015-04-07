@@ -71,7 +71,7 @@ bitcoin = {
 Meteor.http.get("http://winkdex.com/api/v0/price",function(error,result)
   {
   console.log("getting bitcoin price");
-  if (result.statusCode == null)  // error
+  if (!result || result.statusCode == null)  // error
     { 
     console.log("error");
     } 
