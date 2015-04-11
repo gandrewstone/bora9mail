@@ -262,8 +262,31 @@ table td.biggest {
 }
 
 #labelAdd {
+  display: inline;
   height: 1em;
   width: 1em;
+  float: right;
+}
+
+#labelAddInput {
+  /*float: left;*/
+  width: 70%;
+  margin-left: 25px;
+  display: list-item;
+  border-radius: 4px;
+  background-color: LavenderBlush
+  background-color: green
+  }
+
+.emptyspan {
+  /*position: relative*/
+  float: left;
+  display: list-item;
+  margin-left: 25px;
+  width: 70%;
+  height: 1em;
+  border: 1px solid black;
+  border-radius: 5px:
 }
 
 #logout { 

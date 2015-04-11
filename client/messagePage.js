@@ -8,7 +8,7 @@ Template.messagePage.currentMessage = function()
       SetPage("main");
       return "";
       }
-    var dbLine = Messages.findOne({id: messageId},{});
+    var dbLine = Messages.findOne({owner: globals.username, id: messageId},{});
     if (dbLine == null)
       {
       DisplayError("Message is unavailable");
@@ -34,6 +34,14 @@ Template.messagePage.currentMessage = function()
     var msg = JSON.parse(trueMessageStr);
     console.log("GOS msg contents:");
     console.log(trueMessageStr);
+    //indexOf is not supported for all browsers - will have to write our own fn and attach it to Array.prototype
+    if (dbLine.labels.indexOf("unread") == -1)
+      console.log ("Message has been read before");
+    else
+      {
+	console.log("First time reading this message");
+	Meteor.call("clearBuiltinLabelFromMessages", "unread", [dbLine._id], function(error, result) { if (error) DisplayError("server connection error"); else DisplayWarning("Removed 'Unread' Tag"); } );
+      }
     return msg;
   };
 

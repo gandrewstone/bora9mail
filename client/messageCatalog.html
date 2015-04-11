@@ -34,20 +34,36 @@
   <div id="labelAdd"><img id="labelAddImg" src="plus.svg" /></div>
 </template>
 
- <template name="labelList">
+<template name="labelList">
   <div class="labelTable">
-<ul>
-{{#each messageLabels}}
-<li class="{{labelStyle this}}" id="label.{{name}}">{{name}}({{unread}})</li>
-{{/each}}
-  {{#if showing "addingLabel"}}
-    <li class="labelNormal"><INPUT TYPE=TEXT id="labelAddInput"/></li>
-  {{/if}}
+    <ul>
+    {{#each messageLabels}}
+      <li class="{{labelStyle this}}" id="label.{{_id}}">
+	{{#if labelRename}}
+	  <!--<INPUT TYPE=TEXT id="labelAddInput" value={{name}} autofocus="autofocus"/>-->
+	  {{> labelNameEdit}}
+	{{else}}
+  	  <img id="labelExpand" src="blank.png" height=15 width={{ewidth}}>
+	  <img id="labelExpand" src="{{expand}}">
+	  {{name}}{{unreadcount}}
+	  {{#if labelSelected}}
+	    <div id="labelAdd"><img id="labelAddImg.{{_id}}" src="plus.svg" />
+	    </div>
+	  {{/if}}
+	{{/if}}
+      </li>
+    {{/each}}
+    <li><div class="emptyspan"></div><img id="labelAdd" src="plus.svg" />
+      <!--<div id="labelAdd"><img id="labelAddImg" src="plus.svg" /></div>-->
+    </li>
   </ul>
   </div>
-  <div id="labelAdd"><img id="labelAddImg" src="plus.svg" /></div>
 </template>
- 
+
+<template name="labelNameEdit">
+  <INPUT type="text" id="labelAddInput" value={{name}}>
+</template>
+
 <template name="messageList">
   <table id="mailListTable">
   <tr>

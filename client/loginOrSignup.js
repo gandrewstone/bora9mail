@@ -27,6 +27,8 @@ function login(username,password)
       globals.password = password;
       globals.userRecordHandle = userRecordHandle;
       globals.serverPassword = createServerPassword(username, password);
+      globals.defaultLabels = [ "drafts", "deleted", "inbox", "sent", "spam", "unread", "starred"];
+      globals.labelIds = { drafts: "", deleted: "", inbox: "", sent: "", spam: "", unread: "", starred: ""};
       //Session.set("username", username);  // We may need this later to receive normal email
       //Session.set("password", password);  // We may need this later to receive normal email
       //Session.set("recHandle", userRecordHandle);
@@ -40,7 +42,6 @@ function login(username,password)
         {
         console.log("ask the server");
         Meteor.call("userLogin",globals.username,globals.serverPassword,function (error,result) { if (error) DisplayError(error); else loginGood(userRecDataKey,result); });
-        return;
         }
       else
         {
@@ -52,10 +53,14 @@ function login(username,password)
             else if (result) loginGood(userRecDataKey,encdata);
             else DisplayError("Bad login");
           });
-        return;
         }
-
-      
+    var lbls = Labels.find({user: globals.username, name: {$in: globals.defaultLabels} },{fields: {name: 1}, reactive: false});
+    lbls.forEach(function (obj)
+		 {
+		   console.log(obj.name + " -- " + obj._id);
+		   globals.labelIds[obj.name] = obj._id;
+		 });
+    console.log(globals.labelIds);
   }
 
 function loginGood(userRecDataKey,encdata)

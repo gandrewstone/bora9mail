@@ -39,7 +39,7 @@
         Session.set("composeToUser","");
         Session.set("composeCCUser","");
 
-        Session.set("selectedLabel","inbox");
+        Session.set("selectedLabel","");
         Session.set("numCheckedEmails",0);  // count of checked emails
 
         Session.set("applyLabelMode",false); // mode where you are applying a label, not changing the view
@@ -202,25 +202,6 @@ Template.page.helpers({
 
   });
 
-  Template.page.events({
-   "click #logout": function() {
-     loginoutCleanup();
-
-   },
-   'click .clean': function () {
-    var userRecordHandle = Session.get("recHandle")
-    localStorage.removeItem(userRecordHandle);
-    Meteor.call("wipeMessages",[]);
-
-//var p, rp = {};  
-//p = { mode: "ccm", ks: 256 }; 
-//var json_sjcl = sjcl.encrypt("Secret Passphrase", "plaintext", p, rp);  
-//console.log(json_sjcl);
-//var plaintext = sjcl.decrypt("Secret Passphrase", json_sjcl, {}, rp);  
-//console.log(plaintext);
-
-    },
-  });
 
 Template.serverStatus.helpers({
     serverStatus: function()
@@ -275,18 +256,24 @@ Template.serverStatus.helpers({
 //console.log(plaintext);
 
     },
-   'click .dump': function () {
-       var dat = Messages.find({}, {});
-       dat.forEach(function (msg) {
-	   //var ky = msg.enckey;
-	   //if (publickey) {
-	   //    ky = ecc.decrypt(publickey,ky);
-	   //    }
-	   //var subj=sjcl.decrypt(msg.enckey,msg.subject);
-	   var subj= msg.subject;
-	   console.log("L: "+msg.labels+" ID: "+msg.id+" OWN: "+msg.owner+
-                   " To: "+msg.to+" From: "+msg.from+" Subj: "+subj);});
-       }
+   'click .dump': function ()
+    {
+      var dat = Messages.find({}, {});
+      var dat2 = Labels.find({}, {});
+      dat.forEach(function (msg) {
+	//var ky = msg.enckey;
+	//if (publickey) {
+	//    ky = ecc.decrypt(publickey,ky);
+	//    }
+	//var subj=sjcl.decrypt(msg.enckey,msg.subject);
+	var subj= msg.subject;
+	console.log("L: "+msg.labels+" ID: "+msg.id+" OWN: "+msg.owner+
+                    " To: "+msg.to+" From: "+msg.from+" Subj: "+subj);});
+    dat2.forEach( function(lbl)
+		  {
+		    console.log("Label: " + lbl.name + " Parent: " + lbl.parent + " ID: " + lbl._id + " Owner: " + lbl.user);
+		  });
+    }
 	   
 	       
   });

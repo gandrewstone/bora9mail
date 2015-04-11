@@ -103,9 +103,42 @@ dumpLabels = function(username)
 
 
 Template.labelList.helpers({
+  unreadcount: function ()
+  {
+    //var urlab = Labels.findOne({user: globals.username, parent: null, name: "unread"});
+    //console.log ("Unread id is " + globals.labelIds.unread + ".  Current id is " + this._id);
+    //TODO: get this to work!
+    var count = Messages.find({owner: globals.username, labels: { $all: [this._id, globals.labelIds.unread]}}).count();
+    if (count == 0)
+      return;
+    else
+      return '(' + count + ')';
+  },
   messageLabels: function()
     {
-    return Labels.find({user: globals.username }, {});
+    //return Labels.find({user: globals.username }, {});
+
+      //For some reason, sort and toArray are causing exceptions.  So I'm 
+      // writing my own.
+      var labls = Labels.find({user: globals.username, parent: null});
+      var labs = labls.map(function(d) {return d;});  //toArray
+      console.log("MessageLabels helper called");
+      //Sort results, keeping builting labels first
+      labs.sort( function(a,b) { return (a.builtin==b.builtin ? a.name.localeCompare(b.name) : (a.builtin ? -1: 1)); });
+      for (var i=0;i<labs.length;i++)
+      {
+	//console.log(labs[i].name);
+	if (labs[i].expanded == true)  //insert new labels after parent
+	{
+	  var ins = Labels.find({user: globals.username, parent: labs[i]._id});
+	  if (ins.count() == 0) continue;
+	  var insr = ins.map(function(d) {return d;});  //toArray
+	  insr.sort( function(a,b) { return a.name.localeCompare(b.name); });
+	  //console.log(insr[0]);
+	  labs = labs.slice(0,i+1).concat(insr,labs.slice(i+1));
+	}
+      }
+      return labs;
     },
   labelStyle: function(obj)
     {
@@ -115,14 +148,39 @@ Template.labelList.helpers({
       }
     else
       {
-      if (Session.get("selectedLabel") == obj.name)
+      if (Session.get("selectedLabel") == obj._id)
         return "labelSelected";
       var ret = "labelNormal";
       if (obj.dirty>0) ret += "Dirty";
       if (obj.unread>0) ret += "Unread";
       return ret;
       }
+    },
+  expand: function() 
+  {
+    //console.log("Checking expand for " + this._id + " for " + globals.username);
+    if (Labels.find({user: globals.username, parent: this._id}).count()) //At least one sub-label
+    {
+      if (this.expanded)
+	return "unexpand.png";
+      else
+	return "expand.png";
     }
+    else return "blank.png";
+  },
+  ewidth: function()
+  {
+    //console.log("level is " + this.level);
+    return this.level * 15;
+  },
+  labelRename: function()
+  {
+    return (Session.get("renamingLabel") == this._id);
+  },
+  labelSelected: function()
+  {
+    return (Session.get("selectedLabel") == this._id);
+  }
 });
 
 Template.labelList.events({
@@ -130,54 +188,107 @@ Template.labelList.events({
    "click li": function(event) 
      {
      var tr = event.currentTarget;
-     var name = tr.id.split(".")[1];
+     var id = tr.id.split(".")[1];
      // There are 2 uses for the list of labels; 
      if (Session.get("applyLabelMode")) // first adding selected emails to the label
        {
        Session.set("applyLabelMode",false);
-       Meteor.call("applyLabelToMessages", name, getSelectedMessages(), function(error, result) { if (error) DisplayError("server connection error"); else DisplayWarning("Applied"); } );
+       Meteor.call("applyLabelToMessages", id, getSelectedMessages(), function(error, result) { if (error) DisplayError("server connection error"); else DisplayWarning("Applied"); } );
        }
      else  // second showing the emails in that label.
        {
-       Session.set("selectedLabel", name);
-       SetPage("main");  // move the page back to the messageCatalog display
+       if (Session.get("selectedLabel") == id)
+	 {
+	   Session.set("renamingLabel",id);
+	 }
+       else
+         {
+	   Session.set("selectedLabel", id);
+	   SetPage("main");  // move the page back to the messageCatalog display
+         }
        }
      },
-   "click #labelAddImg": function(event)
+   "click #labelAdd": function(event)
      {
-     var val = toggle("addingLabel");
-     if (val) DisplayWarning("Labels are visible to the " + AppName + " server");
-     else ClearWarning();
+       var labelname = "new label";
+       var pid = event.target.id;
+       var parent = null;
+
+       if (pid.indexOf(".") == -1)
+	 parent = null;
+       else
+	 parent = pid.split(".")[1];
+
+       Meteor.call("createLabel", labelname, parent, function(error, newid)
+		   {
+		     if (error)
+		       DisplayError("server connection error");
+		     else
+		     {
+		       Session.set("renamingLabel", newid);
+		       console.log ("Added label with id " + newid + " and parent: " + parent);
+		     }
+		   });
+       event.stopPropagation();  //TODO: Make this browser-agnostic (doens't word in IE?)
      },
+   "click #labelExpand": function (event)
+     {
+       //Label _id is part of the containing LI element's id
+       id = event.target.parentElement.id.split(".")[1];
+       Meteor.call("expandLabelToggle", id, function(error, result) { if (error) DisplayError("server connection error"); else DisplayWarning(result); } ); 
+       event.stopPropagation();  //TODO: Make this browser-agnostic (doens't word in IE?)
+     }
+  });
+
+Template.labelNameEdit.events({
    "keyup #labelAddInput": function(event)
-     {
-     var key=event.which;
-     if (key==13)  // RETURN key
-       {
-       var labelname = event.target.value;
-       toggle("addingLabel");
-       ClearWarning();
-       Meteor.call("createLabel", labelname, function(error, result) { if (error) DisplayError("server connection error"); else DisplayWarning(result); } );
+    {
+      var key=event.which;
+      if (key==13)  // RETURN key
+      {
+	var newname = event.target.value;
+	var labid = Session.get("renamingLabel");
+        Session.set("renamingLabel","");
+	ClearWarning();
+	if (newname)
+	{
+	  console.log("ID: " + labid + " --> New name: " + newname);
+	  Meteor.call("renameLabel", labid, newname, function(error, result) { if (error) DisplayError("server connection error"); else DisplayWarning(result); } );
+	 }
        }
+     },
+   "blur #labelAddInput": function(event)
+     {
+       var newname = event.target.value;
+       var labid = Session.get("renamingLabel");
+       Session.set("renamingLabel","");
+       ClearWarning();
+       if (newname)
+	 Meteor.call("renameLabel", labid, newname, function(error, result) { if (error) DisplayError("server connection error"); else DisplayWarning(result); } );
+     },
+   "focus #labelAddInput": function(event)
+     {
+       event.target.select();
      }
    });
+
+  Template.labelNameEdit.rendered = function()
+  {
+    this.$('input').focus();
+  }
 
   Template.messageList.helpers({
     messages: function ()
     { 
-    var label = Session.get("selectedLabel");
-    if (!label) label = "inbox";  // sanity check
-    //if (label == "sent")
-    //  return Messages.find({from: Session.get("username") + "@" + DNSname, labels: label}, {skip:Session.get("messageOffset"), limit: Session.get("userData").messagesPerPage }); 
-    //else if (label == "drafts")
-    //  return Messages.find({from: Session.get("username") + "@" + DNSname, labels: label}, {skip:Session.get("messageOffset"), limit: Session.get("userData").messagesPerPage }); 
-    //else
-//<<<<<<< HEAD
-//    console.log("Listing: owner: " + Session.get("username") + " label: " + label);  
-//    return Messages.find({owner: Session.get("username"), labels: label}, {skip:Session.get("messageOffset"), limit: Session.get("userData").messagesPerPage });
-//=======
-    console.log("Listing: owner: " + this.userId + "label: " + label);  
-    return Messages.find({owner: globals.username, labels: label}, {skip:Session.get("messageOffset"), limit: Session.get("userData").messagesPerPage });    
+      var label = Session.get("selectedLabel");
+      if (!label)
+      {
+	Session.set("selectedLabel", globals.labelIds.inbox); //this will trigger a redraw, so just return
+	return [];
+      }
+      //console.log("Messages: " + label);
+      //console.log("Listing: owner: " + globals.username + " label: " + label);  
+      return Messages.find({owner: globals.username, labels: label}, {skip:Session.get("messageOffset"), limit: Session.get("userData").messagesPerPage });    
     },
     decrypt: function(key,data)
       {
@@ -268,8 +379,9 @@ Template.messageList.events
       {
         var line = event.currentTarget;
         var emailId = line.id;
-        console.log(line.id);
+        //console.log(line.id);
         Session.set("curMessage",line.id);
         SetPage("message");
+	Meteor.call("clearLabelFromMessages", globals.labelIds.unread, [emailId] );
       }
   });
