@@ -21,6 +21,55 @@ forEachDisplayedMessage = function (apply)
     return lst;  
   }
 
+//Run automatically when 'numCheckedEmails' changes
+//Set up the list of labels of selected emails
+//Set the AllEmails checkbox correctly.
+Tracker.autorun(function ()
+  {
+    var selectnum = Session.get("numCheckedEmails");
+    var elements;
+    if (document.getElementById("mailListTable"))
+    {
+      elements = document.getElementById("mailListTable").getElementsByClassName("summaryCheckBox");
+      document.getElementById("allEmails").checked = (selectnum==elements.length);
+    }
+
+    if (selectnum == 0)
+    {
+      Session.set("labelFullList",[]);
+      Session.set("labelPartList",[]);
+      return;
+    }
+    var mids = Tracker.nonreactive(getSelectedMessages);
+    var m1 = Messages.findOne({owner: globals.username, id: mids[0]},
+				{fields: {labels: 1}});
+    var mlabels = m1.labels;
+    if (selectnum < 2)
+    {
+      Session.set("labelFullList",mlabels);
+      Session.set("labelPartList",[]);
+      return;
+    }
+    var plabels = mlabels.slice(0);//copy array
+    var mcursor = Messages.find({owner: globals.username, id: { $in: mids}},
+				{fields: {labels: 1}});
+    mcursor.forEach(function(msg,i,c) 
+      {
+	var alllabels = [];
+	for (var i=0;i<msg.labels.length;i++)
+	{
+	  if (mlabels.indexOf(msg.labels[i]) != -1)
+	    alllabels.push(msg.labels[i]);  //AND all label arrays
+	  if (plabels.indexOf(msg.labels[i]) == -1)
+	    plabels.push(msg.labels[i]);   //OR all label arrays
+	}
+	mlabels=alllabels;
+      });
+		
+      Session.set("labelFullList",mlabels);
+      Session.set("labelPartList",plabels);
+  });
+      
 
 getSelectedMessages = function ()
   {
@@ -85,13 +134,21 @@ Template.messageCatalog.events(
    
   });
 
-Template.messageCatalog.helpers(
-  {
+/*
+  Template.messageCatalog.helpers({
     numSelectedEmails: function() 
-      {
-      if (Session.get("page") == "message") return 1;  // If a message is being shown, it is implicitly the selection.
+    {
+      // If a message is being shown, it is implicitly the selection.
+      if (Session.get("page") == "message") return 1;
       return Session.get("numCheckedEmails"); 
-      }
+    }
+  });
+*/
+Template.registerHelper('numSelectedEmails', function() 
+  {
+    // If a message is being shown, it is implicitly the selection.
+    if (Session.get("page") == "message") return 1;
+    return Session.get("numCheckedEmails"); 
   });
 
 
@@ -180,6 +237,16 @@ Template.labelList.helpers({
   labelSelected: function()
   {
     return (Session.get("selectedLabel") == this._id);
+  },
+  tagbutsrc: function()
+  {
+    labs = Session.get("labelFullList");
+    if (labs.indexOf(this._id)!= -1)
+      return "fullonbutton.png";
+    labs = Session.get("labelPartList");
+    if (labs.indexOf(this._id)!= -1)
+      return "halfonbutton.png";
+    return "greybutton.png"
   }
 });
 
@@ -203,12 +270,14 @@ Template.labelList.events({
 	 }
        else
          {
+	   forEachDisplayedMessage(function (elem) { elem.checked = false;});
+           Session.set("numCheckedEmails",0);
 	   Session.set("selectedLabel", id);
 	   SetPage("main");  // move the page back to the messageCatalog display
          }
        }
      },
-   "click #labelAdd": function(event)
+   "click #labelAdd, click .emptyspan": function(event)
      {
        var labelname = "new label";
        var pid = event.target.id;
@@ -237,6 +306,20 @@ Template.labelList.events({
        id = event.target.parentElement.id.split(".")[1];
        Meteor.call("expandLabelToggle", id, function(error, result) { if (error) DisplayError("server connection error"); else DisplayWarning(result); } ); 
        event.stopPropagation();  //TODO: Make this browser-agnostic (doens't word in IE?)
+     },
+  "click .taggedbutton": function (event)
+     {
+       var fnname;
+       var wlab = event.currentTarget.id.split(".")[1];
+       var flist = Session.get("labelFullList");
+       console.log("Clicked! " + wlab);
+       if (flist.indexOf(wlab) == -1)
+	 fnname = "applyLabelToMessages";
+       else 
+	 fnname = "clearLabelFromMessages";
+       var msglist = getSelectedMessages();
+       Meteor.call(fnname,wlab,msglist);
+       event.stopPropagation(); 
      }
   });
 
@@ -380,6 +463,8 @@ Template.messageList.events
         var line = event.currentTarget;
         var emailId = line.id;
         //console.log(line.id);
+	forEachDisplayedMessage(function (elem) { elem.checked = false;});
+        Session.set("numCheckedEmails",-1);
         Session.set("curMessage",line.id);
         SetPage("message");
 	Meteor.call("clearLabelFromMessages", globals.labelIds.unread, [emailId] );
