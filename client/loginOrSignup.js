@@ -23,12 +23,13 @@ function login(username,password)
 
       //loginoutCleanup();
       //setSessionDefaults();
+      console.log("Logging in user " + username);
       globals.username = username;
       globals.password = password;
       globals.userRecordHandle = userRecordHandle;
       globals.serverPassword = createServerPassword(username, password);
-      globals.defaultLabels = [ "drafts", "deleted", "inbox", "sent", "spam", "unread", "starred"];
-      globals.labelIds = { drafts: "", deleted: "", inbox: "", sent: "", spam: "", unread: "", starred: ""};
+      //globals.defaultLabels = [ "drafts", "deleted", "inbox", "sent", "spam", "unread", "starred"];
+      globals.labelIds = {};// drafts: "", deleted: "", inbox: "", sent: "", spam: "", unread: "", starred: ""};
       //Session.set("username", username);  // We may need this later to receive normal email
       //Session.set("password", password);  // We may need this later to receive normal email
       //Session.set("recHandle", userRecordHandle);
@@ -54,10 +55,10 @@ function login(username,password)
             else DisplayError("Bad login");
           });
         }
-    var lbls = Labels.find({user: globals.username, name: {$in: globals.defaultLabels} },{fields: {name: 1}, reactive: false});
+    var lbls = Labels.find({user: globals.username, builtin: true},{fields: {name: 1}, reactive: false});
     lbls.forEach(function (obj)
 		 {
-		   console.log(obj.name + " -- " + obj._id);
+		   //console.log(obj.name + " -- " + obj._id);
 		   globals.labelIds[obj.name] = obj._id;
 		 });
     console.log(globals.labelIds);

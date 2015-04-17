@@ -28,6 +28,9 @@ Tracker.autorun(function ()
   {
     var selectnum = Session.get("numCheckedEmails");
     var elements;
+
+    console.log("Autorun for num checked emails");
+   //Set the AllEmails checkbox correctly.
     if (document.getElementById("mailListTable"))
     {
       elements = document.getElementById("mailListTable").getElementsByClassName("summaryCheckBox");
@@ -42,8 +45,9 @@ Tracker.autorun(function ()
     }
     var mids = Tracker.nonreactive(getSelectedMessages);
     var m1 = Messages.findOne({owner: globals.username, id: mids[0]},
-				{fields: {labels: 1}});
-    var mlabels = m1.labels;
+				{fields: {labels: 1, attrs: 1}});
+    var mlabels = m1.labels.concat(m1.attrs);
+    //console.log("initial mlabels: "+mlabels);
     if (selectnum < 2)
     {
       Session.set("labelFullList",mlabels);
@@ -52,18 +56,27 @@ Tracker.autorun(function ()
     }
     var plabels = mlabels.slice(0);//copy array
     var mcursor = Messages.find({owner: globals.username, id: { $in: mids}},
-				{fields: {labels: 1}});
-    mcursor.forEach(function(msg,i,c) 
+				{fields: {labels: 1, attrs: 1}});
+    mcursor.forEach(function(msg,idx,c) 
       {
 	var alllabels = [];
-	for (var i=0;i<msg.labels.length;i++)
+	var i;
+	for (i=0;i<msg.labels.length;i++)
 	{
 	  if (mlabels.indexOf(msg.labels[i]) != -1)
 	    alllabels.push(msg.labels[i]);  //AND all label arrays
 	  if (plabels.indexOf(msg.labels[i]) == -1)
 	    plabels.push(msg.labels[i]);   //OR all label arrays
 	}
+	for (i=0;i<msg.attrs.length;i++)
+	{
+	  if (mlabels.indexOf(msg.attrs[i]) != -1)
+	    alllabels.push(msg.attrs[i]);  //AND all label arrays
+	  if (plabels.indexOf(msg.attrs[i]) == -1)
+	    plabels.push(msg.attrs[i]);   //OR all label arrays
+	}
 	mlabels=alllabels;
+	//console.log("new mlabels: "+mlabels);
       });
 		
       Session.set("labelFullList",mlabels);
@@ -93,6 +106,81 @@ getSelectedMessages = function ()
     return dellst;  
   }
 
+
+
+//Keep track of the number of unread messages
+Tracker.autorun(function ()
+  {
+    console.log("Auto Counting unread messages");
+
+    if (Session.get("loggedIn") && Session.get("cnxn")) 
+    {
+      if (!globals.username)
+      {
+	console.log("No USER NAME!!!!");
+	return;
+      }
+      Labels.find({user: globals.username},{fields: {_id:1}}).forEach(
+        function(labl)
+	{
+	  var sesName = "unread_in_" + labl._id;
+	  //console.log(sesName);
+	  var count = Messages.find({owner: globals.username, $or: [{labels: labl._id},{attrs: labl._id}], attrs: globals.labelIds.unread}).count();
+
+
+	  //console.log(sesName + " has " +count);
+	  Session.set(sesName,count);
+	});
+    }
+  });	
+
+//Keep track of the longest labels
+Tracker.autorun(function ()
+  {
+    console.log("Auto Checking label length");
+
+    if (Session.get("loggedIn") && Session.get("cnxn")) 
+    {
+      if (!globals.username)
+      {
+	console.log("No USER NAME!!!!");
+	Session.set("LabelBarWidth",200);
+	return;
+      }
+      var wmax = 200;
+      var labs = Labels.find({user: globals.username, parent: null},
+			      {fields: {level:1,name:1,expanded:1}}).fetch();
+      console.log(labs[0]._id);
+      for (var i=0;i<labs.length;i++)
+      {
+	var lwid = labs[i].level*15 + labs[i].name.length*8 + 150;
+	wmax = (wmax > lwid ? wmax : lwid);
+	//console.log(labs[i].name);
+	
+	if (labs[i].expanded == true)  //insert new labels after parent
+	{
+	  var ins = Labels.find({user: globals.username, parent: labs[i]._id},
+				{fields: {level:1,name:1,expanded:1}}).fetch();
+	  if (ins.length) 
+	    labs = labs.concat(ins);
+	}
+      }
+
+      Session.set("labelBarWidth",wmax);
+/*
+      var sar;
+      sar = Labels.find({user: globals.username},{fields: {level:1,name:1}}).map(
+        function(labl)
+	{
+	  return labl.level * 15 + labl.name.length * 10 + 70;
+	});
+      sar.sort(function(a,b) {return b-a});  //numerical descending sort
+      Session.set("labelBarWidth",(sar[0]<200 ? 200 : sar[0]));
+*/    
+    }
+  });	
+
+
 Template.messageCatalog.events(
   {
    'click .compose': function () 
@@ -102,17 +190,11 @@ Template.messageCatalog.events(
      },
    'click #deleteMessages': function ()
      {
-       if (Session.get("page") == "message") 
-         {
-         SetPage("main");  // This mail is being deleted so we have to show something else
-         }
-       else  // If a message is being shown, it is implicitly the selection, so leave the checked emails alone.
-         {
-         Session.set("numCheckedEmails",0);  // We are about to delete all checked emails...
-         }
        Meteor.call("deleteMail", getSelectedMessages(), function(error, result) { if (error) DisplayError("server connection error"); else DisplayWarning("Deleted"); } );
+       Session.set("numCheckedEmails",0);  // We are about to delete all checked emails...
+       SetPage("main");  // This mail is being deleted so we have to show something else
      },
-   'click #applyLabel': function (event)
+/*   'click #applyLabel': function (event)
      {
        var mode = !Session.get("applyLabelMode");
        Session.set("applyLabelMode", mode);
@@ -131,9 +213,23 @@ Template.messageCatalog.events(
            }
          }
      }
-   
+  */ 
   });
 
+  Template.messageCatalog.helpers({
+    sidebar: function()
+    {
+/*
+      var ret = {'width':"200px",'margin-left':"-200px"};
+      ret['width'] = Session.get("labelBarWidth")+"px";
+      ret['margin-left'] = "-"+Session.get("labelBarWidth")+"px";
+      return ret;
+*/
+      var w = Session.get("labelBarWidth");
+      return {style: "width:" + w + "px; margin-left:-" + w + "px"};
+    },
+    mlwrap: function() { return Session.get("labelBarWidth")+"px"; }
+  });
 /*
   Template.messageCatalog.helpers({
     numSelectedEmails: function() 
@@ -162,10 +258,11 @@ dumpLabels = function(username)
 Template.labelList.helpers({
   unreadcount: function ()
   {
-    //var urlab = Labels.findOne({user: globals.username, parent: null, name: "unread"});
-    //console.log ("Unread id is " + globals.labelIds.unread + ".  Current id is " + this._id);
-    //TODO: get this to work!
-    var count = Messages.find({owner: globals.username, labels: { $all: [this._id, globals.labelIds.unread]}}).count();
+    //var count = Messages.find({owner: globals.username, $or: [{labels: this._id},{attrs: this._id}], attrs: globals.labelIds.unread}).count();
+    //console.log("Counting unread messages");
+    var sesName = "unread_in_"+this._id;
+    var count = Session.get(sesName);
+    //console.log(sesName + " has " + count);
     if (count == 0)
       return;
     else
@@ -177,9 +274,9 @@ Template.labelList.helpers({
 
       //For some reason, sort and toArray are causing exceptions.  So I'm 
       // writing my own.
+      console.log("MessageLabels helper called 1, width " + Session.get("labelBarWidth"));
       var labls = Labels.find({user: globals.username, parent: null});
       var labs = labls.map(function(d) {return d;});  //toArray
-      console.log("MessageLabels helper called");
       //Sort results, keeping builting labels first
       labs.sort( function(a,b) { return (a.builtin==b.builtin ? a.name.localeCompare(b.name) : (a.builtin ? -1: 1)); });
       for (var i=0;i<labs.length;i++)
@@ -199,19 +296,24 @@ Template.labelList.helpers({
     },
   labelStyle: function(obj)
     {
+    //console.log("Stylin'!");
+    /*
     if (Session.get("applyLabelMode"))
       {
       return "labelPicker";
       }
     else
-      {
-      if (Session.get("selectedLabel") == obj._id)
-        return "labelSelected";
+      { */
       var ret = "labelNormal";
-      if (obj.dirty>0) ret += "Dirty";
-      if (obj.unread>0) ret += "Unread";
+      if (Session.get("selectedLabel") == obj._id)
+        ret = "labelSelected";
+      var sesName = "unread_in_"+obj._id;
+      var count = Session.get(sesName);
+      //if (obj.dirty>0) ret += "Dirty";
+      if (count>0) ret += "Unread";
+      //console.log(obj.name + " Label Style = " + ret);
       return ret;
-      }
+    //  }
     },
   expand: function() 
   {
@@ -256,6 +358,7 @@ Template.labelList.events({
      {
      var tr = event.currentTarget;
      var id = tr.id.split(".")[1];
+       /*
      // There are 2 uses for the list of labels; 
      if (Session.get("applyLabelMode")) // first adding selected emails to the label
        {
@@ -264,7 +367,9 @@ Template.labelList.events({
        }
      else  // second showing the emails in that label.
        {
-       if (Session.get("selectedLabel") == id)
+*/
+       if ((Session.get("selectedLabel") == id) &&
+	   !Labels.findOne({user: globals.username, _id: id},{fields : {builtin:1,_id:0}}).builtin)
 	 {
 	   Session.set("renamingLabel",id);
 	 }
@@ -275,7 +380,7 @@ Template.labelList.events({
 	   Session.set("selectedLabel", id);
 	   SetPage("main");  // move the page back to the messageCatalog display
          }
-       }
+//       }
      },
    "click #labelAdd, click .emptyspan": function(event)
      {
@@ -312,12 +417,54 @@ Template.labelList.events({
        var fnname;
        var wlab = event.currentTarget.id.split(".")[1];
        var flist = Session.get("labelFullList");
-       console.log("Clicked! " + wlab);
-       if (flist.indexOf(wlab) == -1)
-	 fnname = "applyLabelToMessages";
-       else 
-	 fnname = "clearLabelFromMessages";
        var msglist = getSelectedMessages();
+       var clrSelection = false;
+       var labl = Labels.findOne({user: globals.username, _id: wlab});
+       console.log("Clicked! " + wlab);
+       if (labl.isAttr)
+       {
+	 if (flist.indexOf(wlab) == -1)
+	   fnname="applyAttrToMessages";
+	 else
+	 {
+	   fnname="clearAttrFromMessages";
+	   if (wlab==Session.get("selectedLabel"))
+	     clrSelection=true;
+	 }
+       }
+       else if (Session.get("selectedLabel")==globals.labelIds.deleted)
+       {
+	 clrSelection = true;
+	 fnname = "setOneLabel";
+	 if (wlab==globals.labelIds.deleted)
+	   //already have 'deleted' tag, since selectedLabel is 'deleted', so
+	   //clicking the 'deleted' button will remove the tag (undelete)
+	   wlab = globals.labelIds.inbox;  //move undeleted mail to inbox
+        }
+       else if (wlab==globals.labelIds.deleted)
+       {
+	 //must not currently have 'deleted' tag if we get here, so delete
+	 clrSelection = true;
+	 fnname = "setOneLabel";  //set label to 'deleted'
+       }
+       else if (flist.indexOf(wlab) == -1)  //label not currently on message
+	 fnname = "applyLabelToMessages";
+       else
+       {
+	 fnname = "clearLabelFromMessages";
+	 //If Removing currently viewed label, uncheck items first
+	 if (wlab==Session.get("selectedLabel"))
+	   clrSelection = true;
+       }
+       if (clrSelection)
+       {
+	 forEachDisplayedMessage(function (elem) { elem.checked = false;});
+         Session.set("numCheckedEmails",0);
+	 //If in a 'message' page, the message is being moved or deleted,
+	 // so go back to the main page.
+	 SetPage("main");  // If already 'main' this won't affect anything.
+       }
+	 
        Meteor.call(fnname,wlab,msglist);
        event.stopPropagation(); 
      }
@@ -363,15 +510,17 @@ Template.labelNameEdit.events({
   Template.messageList.helpers({
     messages: function ()
     { 
+      if (!globals || !globals.labelIds)
+	return;
       var label = Session.get("selectedLabel");
       if (!label)
       {
 	Session.set("selectedLabel", globals.labelIds.inbox); //this will trigger a redraw, so just return
 	return [];
       }
-      //console.log("Messages: " + label);
+      console.log("Messages: " + label);
       //console.log("Listing: owner: " + globals.username + " label: " + label);  
-      return Messages.find({owner: globals.username, labels: label}, {skip:Session.get("messageOffset"), limit: Session.get("userData").messagesPerPage });    
+      return Messages.find({owner: globals.username, $or: [{labels: label},{attrs: label}]}, {skip:Session.get("messageOffset"), limit: Session.get("userData").messagesPerPage });    
     },
     decrypt: function(key,data)
       {
@@ -467,6 +616,6 @@ Template.messageList.events
         Session.set("numCheckedEmails",-1);
         Session.set("curMessage",line.id);
         SetPage("message");
-	Meteor.call("clearLabelFromMessages", globals.labelIds.unread, [emailId] );
+	//Meteor.call("clearLabelFromMessages", globals.labelIds.unread, [emailId] );
       }
   });

@@ -23,7 +23,7 @@ var stringMonth=["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", 
 
 dateDisplay = function (date)
   {
-  var d = date;  //Date(date);
+  var d = new Date(date); //date  //Date(date);
   var n = Date.now();
   var elapsed = n - d;
   if (elapsed < 1000 * 60 * 2) // 2 minutes

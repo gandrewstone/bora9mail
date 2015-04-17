@@ -30,6 +30,7 @@
 
         Session.set("userData",null);
         //Session.set("username",null);
+        Session.set("loggedIn",false);
         Session.set("recHandle",null);
 
 	Session.set("btcBalance",0.0);
@@ -49,22 +50,29 @@
         Session.set("usernameAccepted", false);
         Session.set("passwordValidity", "");
         Session.set("passwordAccepted", false);
+        globals.username = null;
+        globals.password = null;
+        globals.labelIds = {};
     }
   
-  Tracker.autorun(function(cnxn)
+  Tracker.autorun(function()
     {
-    var status = Meteor.status();
-    if (status.connected && Session.get("cnxn" == false))
-      {
-      console.log("RECONNECT");
-      Session.set("cnxn", true);
-      }
-    if (!status.connected && Session.get("cnxn" == true))
-      {
-      console.log("DISCONNECT");
-      Session.set("cnxn", false);
-      }
-
+      var status = Meteor.status();
+      console.log("Server connection status: " + status.status);
+      
+      //This stuff is done in the server status helper function
+      /*
+	if (status.connected && Session.get("cnxn" == false))
+	{
+	console.log("RECONNECTED");
+	Session.set("cnxn", true);
+	}
+	if (!status.connected && Session.get("cnxn" == true))
+	{
+	console.log("DISCONNECTED");
+	Session.set("cnxn", false);
+	}
+      */
     });
 
   // Periodically refresh the current balance.  But its not important enough to do often.
@@ -210,7 +218,6 @@ Template.serverStatus.helpers({
       if (status.connected && !Session.get("cnxn"))
         {
         console.log("RECONNECT");
-        Session.set("cnxn", true);
         var serverPassword = Session.get("serverPassword");
         var username = globals.username; // Session.get("username");
         var userdata = Session.get("userData");
@@ -227,6 +234,7 @@ Template.serverStatus.helpers({
           {
             loginoutCleanup();
           }
+        Session.set("cnxn", true);
         }
       if (!status.connected && Session.get("cnxn") == true)
         {

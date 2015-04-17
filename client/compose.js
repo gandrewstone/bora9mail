@@ -956,7 +956,7 @@ function processAddrField(str,field,entire)
 
        var from = globals.username + "@" + DNSname;
        var inreplyto = null;
-       var myself = UserRecords.findOne({username: Session.get("username")});
+       var myself = UserRecords.findOne({username: globals.username}); //Session.get("username")});
 
        /*var tmp = parseResolveTo(rawTo + ",");
        var tos = processedTo.concat(tmp[0]);  // Get the last one

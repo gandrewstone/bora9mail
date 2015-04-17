@@ -1,5 +1,9 @@
 
-Template.messagePage.currentMessage = function()
+Template.messagePage.helpers
+  ({
+  personDisplay:function(person) { return personDisplay(person); },
+  dateDisplay:function(d) { return dateDisplay(d); },
+  currentMessage : function()
   {
     var messageId = Session.get("curMessage");
     if (messageId == null)
@@ -34,31 +38,29 @@ Template.messagePage.currentMessage = function()
     var msg = JSON.parse(trueMessageStr);
     console.log("GOS msg contents:");
     console.log(trueMessageStr);
-    //indexOf is not supported for all browsers - will have to write our own fn and attach it to Array.prototype
-    if (dbLine.labels.indexOf("unread") == -1)
+    //indexOf is not supported for all browsers - will have to write our own
+    // fn and attach it to Array.prototype
+    if (dbLine.attrs.indexOf(globals.labelIds.unread) == -1)
       console.log ("Message has been read before");
     else
       {
 	console.log("First time reading this message");
-	Meteor.call("clearBuiltinLabelFromMessages", "unread", [dbLine._id], function(error, result) { if (error) DisplayError("server connection error"); else DisplayWarning("Removed 'Unread' Tag"); } );
+	Meteor.call("clearAttrFromMessages", globals.labelIds.unread, [messageId], function(error, result) { if (error) DisplayError("server connection error"); else DisplayWarning("Removed 'Unread' Tag"); } );
       }
     return msg;
-  };
+  }
 
-Template.messagePage.helpers
-  ({
-  personDisplay:function(person) { return personDisplay(person); },
-  dateDisplay:function(d) { return dateDisplay(d); }
   });
 
 Template.messagePage.events
   ({
   "click #messagePageBack": function(event)
     {
-    SetPage("main");
+      Session.set("numCheckedEmails",0);
+      SetPage("main");
     },
   "click #messagePageReply": function(event)
     {
-    Session.set("composing",true);
+      Session.set("composing",true);
     }
   });

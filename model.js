@@ -38,12 +38,15 @@ createLabel = function(userid, labelname, parent, builtin)
     var par = Labels.findOne({user:userid, _id: parent});
     Labels.update({user:userid, _id: parent},{$set: {expanded: true}});
     newid =  Labels.insert({user: userid, name: labelname, parent: parent,
-			  level: par.level + 1, dirty:0, expanded:false, builtin: builtin});
+			    level: par.level + 1, dirty:0, expanded:false,
+			    builtin: builtin, isAttr: par.isAttr});
   }
   else
     newid = Labels.insert({user: userid, name: labelname, parent: null,
-			  level: 0, dirty:0, expanded:false, builtin: builtin});
+			  level: 0, dirty:0, expanded:false, builtin: builtin,
+			  isAttr: (builtin && (labelname=="attributes"))});
   console.log ("New label id is: " + newid);
+  console.log (Labels.findOne({_id: newid}));
   return newid;
 }
 
@@ -128,19 +131,25 @@ Meteor.methods({
       },
     createUser: function (username, password, encdata)
       {
-      if (UserRecords.findOne({username: username}) != null) return false;
-      this.setUserId(username);
-      UserRecords.insert({ username: username, password: password, publickey: null, encdata: encdata});
-      var attid = createLabel(username, "attributes",null, true);
-      var delid = createLabel(username, "deleted", null, true);
-      createLabel(username, "drafts", null, true);
-      createLabel(username, "inbox", null, true);
-      createLabel(username, "sent", null, true);
-      createLabel(username, "spam", delid, true);
-      createLabel(username, "starred", attid, true);
-      createLabel(username, "unread", attid, true);
-      console.log("created user " + username + " PW: " + password + " data: " + encdata);
-      return true;
+	if (UserRecords.findOne({username: username}) != null) return false;
+	this.setUserId(username);
+	UserRecords.insert({ username: username, password: password, publickey: null, encdata: encdata});
+	var attid = createLabel(username, "attributes",null, true);
+	var delid = createLabel(username, "deleted", null, true);
+	createLabel(username, "drafts", null, true);
+	createLabel(username, "inbox", null, true);
+	createLabel(username, "sent", null, true);
+	createLabel(username, "spam", delid, true);
+	createLabel(username, "starred", attid, true);
+	createLabel(username, "unread", attid, true);
+	createLabel(username, "priority1", attid, true);
+	createLabel(username, "priority2", attid, true);
+	createLabel(username, "priority3", attid, true);
+	console.log("created user " + username + " PW: " + password + " data: " + encdata);
+	//Label tree is expanded by default.  Collapse new top-level labels.
+	Meteor.call("expandLabelToggle", attid); 
+	Meteor.call("expandLabelToggle", delid); 
+	return true;
       },
     wipeMessages: function (options) 
       { 
@@ -148,19 +157,23 @@ Meteor.methods({
       Labels.remove({});
       UserRecords.remove({});
       },
-
+    //Clear all labels and then set label to labid
+    setOneLabel: function (labid, msgIdList)
+      {
+	Messages.update({owner:this.userId, id: {$in: msgIdList}},{$set: {labels:[labid]}},{multi: true})
+      },
     deleteMail: function(messageIdList)
       {
+      var dellbl = Labels.findOne({user: this.userId, name: 'deleted', builtin: true}, {fields: {_id: 1}});
       for(var i = 0; i<messageIdList.length; i++)
         {
         var msg = Messages.findOne({owner:this.userId, id: messageIdList[i]});
-        if ((msg.labels.length > 1) || (msg.labels[0] != "deleted"))  // If a message has any label besides 'deleted', delete just moves the message to the 'deleted' label
+        if ((msg.labels.length > 1) || (msg.labels[0] != dellbl._id))  // If a message has any label besides 'deleted', delete just moves the message to the 'deleted' label
           {
           console.log("moving mail: " + messageIdList[i] + " to deleted label");
-          Messages.update({owner:this.userId, id: messageIdList[i]},{$set: {labels:["deleted"]}});  //GOS added $set: {}
-          Labels.update({user:this.userId, name: "deleted"}, {$inc: {unread: 1}});
+          Messages.update({owner:this.userId, id: messageIdList[i]},{$set: {labels:[dellbl._id]}});
           }
-        else 
+        else
           {
           Messages.remove({owner:this.userId,id:messageIdList[i]});  // If the message is in deleted, then really remove it.
           console.log("deleting mail: " + messageIdList[i]);
@@ -194,47 +207,41 @@ Meteor.methods({
 	var result = Labels.update({user:this.userId, _id: labid},
 			           {$set: {expanded:  !curval}});
       },
+    applyAttrToMessages: function(labelId, messageIdList)
+      {
+	//console.log("applyLabelToMessages");
+	//var labl = Labels.findOne({user: this.userId, _id: labelId});
+	Messages.update({owner: this.userId,id: {$in: messageIdList}},{$push: {attrs:labelId}}, {multi: true});
+      },
     applyLabelToMessages: function(labelId, messageIdList)
       {
-      console.log("applyLabelToMessages");
-      //for(var i = 0; i<messageIdList.length; i++)
-      //  {
-      //  console.log("deleting mail: " + messageIdList[i]);
-      Messages.update({owner: this.userId,id: {$in: messageIdList}},{$push: {labels:labelId}}, {multi: true});
-        
-     //   }
-      
-      //var result = Labels.update({user:this.userId, name: label}, {$inc: {unread: messageIdList.length}});
-      return true;
+	Messages.update({owner: this.userId,id: {$in: messageIdList}},{$push: {labels:labelId}}, {multi: true});
+      },
+    clearAttrFromMessages: function(labelId, messageIdList)
+      {
+	//console.log("clearAttrFromMessages");
+	//var labl = Labels.findOne({user: this.userId, _id: labelId});
+	return Messages.update({owner: this.userId,attrs:labelId,id: {$in: messageIdList}},{$pull: {attrs:labelId}}, {multi: true});
       },
     clearLabelFromMessages: function(labelId, messageIdList)
       {
-      console.log("clearLabelFromMessages");
-      return Messages.update({owner: this.userId,labels:labelId,id: {$in: messageIdList}},{$pull: {labels:labelId}}, {multi: true});
+	var count = Messages.update({owner: this.userId,labels:labelId,id: {$in: messageIdList}},{$pull: {labels:labelId}}, {multi: true});
+	console.log("Cleared labels from " + count + " message(s)");
+	//Add 'deleted' label to any messages with no other labels
+	var dellbl = Labels.findOne({user: this.userId, name: 'deleted', builtin: true}, {fields: {_id: 1}});
+	var cnt2 = Messages.update({owner: this.userId,labels: [],id: {$in: messageIdList}},{$set: {labels: [dellbl._id]}}, {multi: true});
+	console.log("Set 'deleted' label on " + cnt2 + " message(s)");
+	return count;
       },
-    applyBuiltinLabelToMessages: function(label, messageIdList)
+    clearKnownAttrFromMessages: function(at, messageIdList)
       {
-	//label must be one of: deleted, drafts, inbox, sent, spam, unread
-	//var lbl = Labels.findOne({user: this.userId,name: label,parent: null});
-      console.log("applyBuiltinLabelToMessages");
-      //for(var i = 0; i<messageIdList.length; i++)
-      //  {
-      Messages.update({owner: this.userId,id: {$in: messageIdList}},{$push: {labels:globals.labelIds[label]}}, {multi: true});
-      //  }
-      // TODO count the unread verses the read instead of adding the entire count
-      //var result = Labels.update({user:this.userId, name: label}, {$inc: {unread: messageIdList.length}});
-      return true;
-      },
-    clearBuiltinLabelFromMessages: function(label, messageIdList)
-      {
-	//label must be one of: deleted, drafts, inbox, sent, spam, unread, starred
-	//var lbl = Labels.findOne({user: this.userId,name: label,parent: null});
-      console.log("applyBuiltinLabelToMessages");
-      //for(var i = 0; i<messageIdList.length; i++)
-      //  {
-      Messages.update({owner: this.userId,labels: global.labelIds[label],id: {$in: messageIdList}},{$pull: {labels:globals.labelIds[label]}}, {multi: true});
+	//'at' must be one of: attributes, priority[1,2,3], unread, starred
+	//Can only use this method for builtin attributes. Otherwise there
+	//could be duplicate names and findOne could choose the wrong one.
+	console.log("clearKnownAttrFromMessages");
+	attrID = Labels.findOne({user: this.userId, name: at, builtin: true},{fields: {_id: 1}});
+	Messages.update({owner: this.userId,attrs: attrID._id,id: {$in: messageIdList}},{$pull: {attrs:attrID._id}}, {multi: true});
         
-      //  }
       return true;
       },
 
@@ -245,10 +252,10 @@ Meteor.methods({
       if (to == null) // sending to drafts
         {
         //console.log("Saving draft");
-        var drlbl = Labels.findOne({user: this.userId,name: "drafts",parent: null});
-        var unlbl = Labels.findOne({user: this.userId,name: "unread",parent: null});
+        var drlbl = Labels.findOne({user: this.userId,name: "drafts", builtin: true});
+        var unlbl = Labels.findOne({user: this.userId,name: "unread", builtin: true});
         console.log("Saving draft to label " + drlbl.name + " (" + drlbl._id + ")");
-	Messages.insert({ owner: this.userId, to: username, from: from, date: d, cipherkey: enckey, re: inreplyto, subject: subject, preview: preview, message: message, id: id, labels:[drlbl._id, unlbl._id], importance:0, });
+	Messages.insert({ owner: this.userId, to: username, from: from, date: d, cipherkey: enckey, re: inreplyto, subject: subject, preview: preview, message: message, id: id, labels:[drlbl._id], attrs: [unlbl._id], importance:0, });
 	
         return;
         }
@@ -272,16 +279,14 @@ Meteor.methods({
         var slbl = Labels.findOne({user: username,name: "inbox",builtin: true});
         var unlbl = Labels.findOne({user: username,name: "unread",builtin: true});
         console.log("Sending mail to label " + slbl.name + " (" + slbl._id + ")");
-        Messages.insert({ owner: username,to: username, from: from, date: d, cipherkey: enckey, re: inreplyto, subject: subject, preview: preview, message: message, id: id, labels:[slbl._id, unlbl._id], importance:0, });
-        labelAddMessage(username,"inbox", id);
+        Messages.insert({ owner: username,to: username, from: from, date: d, cipherkey: enckey, re: inreplyto, subject: subject, preview: preview, message: message, id: id, labels:[slbl._id], attrs: [unlbl._id], importance:0, });
 
 	if (keepcopy) 
           {
-            //var vlbl = Labels.findOne({user: this.userId,name: "sent",parent: null});
-            console.log("Saving mail to label 'sent' (" + globals.labelIds.sent + ")");
-           Messages.insert({ owner: this.userId,to: username, from: from, date: d, cipherkey: enckey, re: inreplyto, subject: subject, preview: preview, message: message, id: id+1, labels:[globals.labelIds.sent], importance:0, });      
-            labelAddMessage(fromuserid,"sent", id+1);
-	    }
+            var vlbl = Labels.findOne({user: this.userId,name: "sent",builtin:true},{fields: {_id:1}});
+            console.log("Saving mail to label 'sent' (" + vlbl._id + ")");
+           Messages.insert({ owner: this.userId,to: username, from: from, date: d, cipherkey: enckey, re: inreplyto, subject: subject, preview: preview, message: message, id: id+1, labels:[vlbl._id], attrs:[], importance:0, });      
+	  }
         }
       if (to.typ == "rfc822") 
         {

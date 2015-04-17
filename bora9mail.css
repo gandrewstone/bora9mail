@@ -204,7 +204,7 @@ table td.biggest {
 }
 
 #mlwrapper {
-  margin-left: 210px;
+  /*margin-left: 210px;*/
 }
 #mlcontent {
   float: right;
@@ -215,8 +215,8 @@ table td.biggest {
 /* Defines the outside of the message label sidebar */
 #mlsidebar {
   float: left;
-  width: 210px;
-  margin-left: -210px;
+  /*width: 210px;
+  margin-left: -210px;*/
   /* background-color: #FFA; */
 }
 
@@ -235,8 +235,15 @@ table td.biggest {
   margin-right: auto
 }
 
+.labelSelectedUnread {
+  background-color: #D0F0E0;
+  color: blue;
+  font-weight: bold;  
+}
+
 .labelSelected {
   background-color: #D0F0E0;
+  color: blue;
 }
 
 .labelPicker {

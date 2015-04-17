@@ -1,5 +1,5 @@
 <template name="messageCatalog">
-<div id="mlwrapper">
+<div id="mlwrapper" style="margin-left:{{mlwrap}}">
   <div id="mlcontent">
     <hr id="headerRule"/>
     {{#if showPage "message"}}
@@ -8,11 +8,11 @@
       {{> messageList}}
     {{/if}}
   </div>
-  <div id="mlsidebar">
+  <div id="mlsidebar" {{sidebar}}>
     <div id="mlsidebarContents">
     <button class="compose">Compose</button>
     {{#if numSelectedEmails}}
-      <div id="applyLabel"><img src="label.svg" /></div>
+      <!--<div id="applyLabel"><img src="label.svg" /></div>-->
       <div id="deleteMessages"><img src="recycle.svg" /></div>
     {{/if}}
     {{> labelList}}
