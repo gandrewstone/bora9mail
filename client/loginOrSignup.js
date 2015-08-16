@@ -35,6 +35,7 @@ function login(username,password)
       //Session.set("recHandle", userRecordHandle);
       //var serverPassword = createServerPassword(username, password);
       //Session.set("serverPassword",serverPassword);
+      Session.set("LabelBarWidth",200);
 
       var encdata = localStorage.getItem(userRecordHandle);
 

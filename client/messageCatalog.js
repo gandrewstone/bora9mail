@@ -1,6 +1,7 @@
 
 forEachDisplayedMessage = function (apply)
   {
+    //console.log("Trace - forEachDisplayedMessage (messageCatalog.js,2)");
        if (Session.get("page") == "message") // If a message is being shown, it is implicitly the selection.
          {
          var messageId = Session.get("curMessage");
@@ -16,20 +17,56 @@ forEachDisplayedMessage = function (apply)
          if (result)
            {
            lst[lst.length] = result;
-           }
+           } 
          }
     return lst;  
   }
+
+getSelectedMessages = function ()
+  {
+    //console.log("Trace - getSelectedMessages (messageCatalog.js,25)");
+       if (Session.get("page") == "message") // If a message is being shown, it is implicitly the selection.
+         {
+         var messageId = Session.get("curMessage");
+         return [messageId];
+         }
+       // Otherwise, its the checked messages
+       if (Session.get("page") == "main") //Verify main page
+	 {
+	 var elements = document.getElementById("mailListTable").getElementsByClassName("summaryCheckBox");
+	 var dellst = [];
+	 for(var i = 0; i<elements.length; i++)
+           {
+           var elem = elements[i];
+           if (elem.checked)
+             {
+             dellst[dellst.length] = elem.id;
+             //console.log("deleting mail: " + elem.id);
+	     }
+           }
+         }
+    return dellst;  
+  }
+
+//
+//*** NOTE: These Autorun functions run at startup, and again at initialization,
+//          before a lot of stuff has been set up or anyone is logged in.  So
+//          we may want to check for being logged in or something before doing
+//          anything else.
+//
 
 //Run automatically when 'numCheckedEmails' changes
 //Set up the list of labels of selected emails
 //Set the AllEmails checkbox correctly.
 Tracker.autorun(function ()
   {
+    //console.log("Trace - Autorun for numCheckedEmails (messageCatalog.js,54)");
     var selectnum = Session.get("numCheckedEmails");
+    if (selectnum === undefined)
+      return;
     var elements;
+    console.log("NumCheckedEmails changed to " + selectnum);
 
-    console.log("Autorun for num checked emails");
    //Set the AllEmails checkbox correctly.
     if (document.getElementById("mailListTable"))
     {
@@ -84,34 +121,13 @@ Tracker.autorun(function ()
   });
       
 
-getSelectedMessages = function ()
-  {
-       if (Session.get("page") == "message") // If a message is being shown, it is implicitly the selection.
-         {
-         var messageId = Session.get("curMessage");
-         return [messageId];
-         }
-       // Otherwise, its the checked messages
-       var elements = document.getElementById("mailListTable").getElementsByClassName("summaryCheckBox");
-       var dellst = [];
-       for(var i = 0; i<elements.length; i++)
-         {
-         var elem = elements[i];
-         if (elem.checked)
-           {
-           dellst[dellst.length] = elem.id;
-           //console.log("deleting mail: " + elem.id);
-           }
-         }
-    return dellst;  
-  }
-
 
 
 //Keep track of the number of unread messages
 Tracker.autorun(function ()
   {
-    console.log("Auto Counting unread messages");
+    //console.log("Trace - Autorun for unread messages (messageCatalog.js,118)");
+    //console.log("Auto Counting unread messages");
 
     if (Session.get("loggedIn") && Session.get("cnxn")) 
     {
@@ -137,7 +153,8 @@ Tracker.autorun(function ()
 //Keep track of the longest labels
 Tracker.autorun(function ()
   {
-    console.log("Auto Checking label length");
+    //console.log("Trace - Autorun for label length changes (messageCatalog.js,145)");
+    //console.log("Auto Checking label length");
 
     if (Session.get("loggedIn") && Session.get("cnxn")) 
     {
@@ -178,6 +195,10 @@ Tracker.autorun(function ()
       Session.set("labelBarWidth",(sar[0]<200 ? 200 : sar[0]));
 */    
     }
+    else
+    {
+      	Session.set("LabelBarWidth",200);
+    }
   });	
 
 
@@ -185,11 +206,13 @@ Template.messageCatalog.events(
   {
    'click .compose': function () 
      {
+     //console.log("Trace - messageCatalog event click .compose (messageCatalog.js,198)");
      resetCompose();
      SetPage("compose");
      },
    'click #deleteMessages': function ()
      {
+       //console.log("Trace - messageCatalog event click #delete (messageCatalog.js,198)");
        Meteor.call("deleteMail", getSelectedMessages(), function(error, result) { if (error) DisplayError("server connection error"); else DisplayWarning("Deleted"); } );
        Session.set("numCheckedEmails",0);  // We are about to delete all checked emails...
        SetPage("main");  // This mail is being deleted so we have to show something else
@@ -219,6 +242,7 @@ Template.messageCatalog.events(
   Template.messageCatalog.helpers({
     sidebar: function()
     {
+       //console.log("Trace - messageCatalog helper sidebar (messageCatalog.js,234)");
 /*
       var ret = {'width':"200px",'margin-left':"-200px"};
       ret['width'] = Session.get("labelBarWidth")+"px";
@@ -226,9 +250,22 @@ Template.messageCatalog.events(
       return ret;
 */
       var w = Session.get("labelBarWidth");
-      return {style: "width:" + w + "px; margin-left:-" + w + "px"};
+      if (!w)
+	{
+	  console.log("No labelBarWidth session var!");
+	  return;
+	}
+      else
+	return {style: "width:" + w + "px; margin-left:-" + w + "px"};
     },
-    mlwrap: function() { return Session.get("labelBarWidth")+"px"; }
+    mlwrap: function() {
+       //console.log("Trace - messageCatalog helper mlwrap (messageCatalog.js,251)");
+      //console.log("mlwrap -> ");
+      //return "200px";
+      var wid = Session.get("labelBarWidth")+"px";
+      console.log("mlwrap -> ", wid);
+      return wid;
+    }
   });
 /*
   Template.messageCatalog.helpers({
@@ -242,22 +279,24 @@ Template.messageCatalog.events(
 */
 Template.registerHelper('numSelectedEmails', function() 
   {
+    //console.log("Trace - Templage helper numSelectedEmails (messageCatalog.js,271)");
     // If a message is being shown, it is implicitly the selection.
     if (Session.get("page") == "message") return 1;
     return Session.get("numCheckedEmails"); 
   });
 
 
-dumpLabels = function(username)
-  {
-  var lbl = Labels.find({user: username }, {});
-  iter.forEach(function(x) { print("name: " + x.name + " unread: " + x.unread); });
-  }
-
+//dumpLabels = function(username)
+//  {
+//  var lbl = Labels.find({user: username }, {});
+//  iter.forEach(function(x) { print("name: " + x.name + " unread: " + x.unread); });
+//  }
+//
 
 Template.labelList.helpers({
   unreadcount: function ()
   {
+    //console.log("Trace - labelList helper unreadcount (messageCatalog.js,288)");
     //var count = Messages.find({owner: globals.username, $or: [{labels: this._id},{attrs: this._id}], attrs: globals.labelIds.unread}).count();
     //console.log("Counting unread messages");
     var sesName = "unread_in_"+this._id;
@@ -270,14 +309,15 @@ Template.labelList.helpers({
   },
   messageLabels: function()
     {
-    //return Labels.find({user: globals.username }, {});
+     //console.log("Trace - labelList helper messageLabels (messageCatalog.js,301)");
+   //return Labels.find({user: globals.username }, {});
 
       //For some reason, sort and toArray are causing exceptions.  So I'm 
       // writing my own.
-      console.log("MessageLabels helper called 1, width " + Session.get("labelBarWidth"));
+      console.log("MessageLabels helper called");// 1, width " + Session.get("labelBarWidth"));
       var labls = Labels.find({user: globals.username, parent: null});
       var labs = labls.map(function(d) {return d;});  //toArray
-      //Sort results, keeping builting labels first
+      //Sort results, keeping builtin labels first
       labs.sort( function(a,b) { return (a.builtin==b.builtin ? a.name.localeCompare(b.name) : (a.builtin ? -1: 1)); });
       for (var i=0;i<labs.length;i++)
       {
@@ -296,6 +336,7 @@ Template.labelList.helpers({
     },
   labelStyle: function(obj)
     {
+     //console.log("Trace - labelList helper labelStyle (messageCatalog.js,328)");
     //console.log("Stylin'!");
     /*
     if (Session.get("applyLabelMode"))
@@ -317,6 +358,7 @@ Template.labelList.helpers({
     },
   expand: function() 
   {
+     //console.log("Trace - labelList helper expand (messageCatalog.js,350)");
     //console.log("Checking expand for " + this._id + " for " + globals.username);
     if (Labels.find({user: globals.username, parent: this._id}).count()) //At least one sub-label
     {
@@ -329,19 +371,23 @@ Template.labelList.helpers({
   },
   ewidth: function()
   {
+    //console.log("Trace - labelList helper ewidth (messageCatalog.js,363)");
     //console.log("level is " + this.level);
     return this.level * 15;
   },
   labelRename: function()
   {
+    //console.log("Trace - labelList helper labelRename (messageCatalog.js,369)");
     return (Session.get("renamingLabel") == this._id);
   },
   labelSelected: function()
   {
+    //console.log("Trace - labelList helper labelSelected (messageCatalog.js,374)");
     return (Session.get("selectedLabel") == this._id);
   },
   tagbutsrc: function()
   {
+    //console.log("Trace - labelList helper tagbutsrc (messageCatalog.js,379)");
     labs = Session.get("labelFullList");
     if (labs.indexOf(this._id)!= -1)
       return "fullonbutton.png";
@@ -356,6 +402,7 @@ Template.labelList.events({
 
    "click li": function(event) 
      {
+     //console.log("Trace - labelList event click li (messageCatalog.js,394)");
      var tr = event.currentTarget;
      var id = tr.id.split(".")[1];
        /*
@@ -384,6 +431,7 @@ Template.labelList.events({
      },
    "click #labelAdd, click .emptyspan": function(event)
      {
+     //console.log("Trace - labelList event click #labelAdd,.emptyspan (messageCatalog.js,423)");
        var labelname = "new label";
        var pid = event.target.id;
        var parent = null;
@@ -407,6 +455,7 @@ Template.labelList.events({
      },
    "click #labelExpand": function (event)
      {
+       //console.log("Trace - labelList event click #labelexpand (messageCatalog.js,447)");
        //Label _id is part of the containing LI element's id
        id = event.target.parentElement.id.split(".")[1];
        Meteor.call("expandLabelToggle", id, function(error, result) { if (error) DisplayError("server connection error"); else DisplayWarning(result); } ); 
@@ -414,6 +463,7 @@ Template.labelList.events({
      },
   "click .taggedbutton": function (event)
      {
+       //console.log("Trace - labelList event click .taggedbutton (messageCatalog.js,447)");
        var fnname;
        var wlab = event.currentTarget.id.split(".")[1];
        var flist = Session.get("labelFullList");
@@ -473,6 +523,7 @@ Template.labelList.events({
 Template.labelNameEdit.events({
    "keyup #labelAddInput": function(event)
     {
+      //console.log("Trace - labelNameEdit event keyup #labelAddInput (messageCatalog.js,515)");
       var key=event.which;
       if (key==13)  // RETURN key
       {
@@ -489,6 +540,7 @@ Template.labelNameEdit.events({
      },
    "blur #labelAddInput": function(event)
      {
+       //console.log("Trace - labelNameEdit event blur #labelAddInput (messageCatalog.js,532)");
        var newname = event.target.value;
        var labid = Session.get("renamingLabel");
        Session.set("renamingLabel","");
@@ -498,18 +550,21 @@ Template.labelNameEdit.events({
      },
    "focus #labelAddInput": function(event)
      {
+       //console.log("Trace - labelNameEdit event focus #labelAddInput (messageCatalog.js,542)");
        event.target.select();
      }
    });
 
   Template.labelNameEdit.rendered = function()
   {
+    //console.log("Trace - labelNameEdit rendered (messageCatalog.js,549)");
     this.$('input').focus();
   }
 
   Template.messageList.helpers({
     messages: function ()
     { 
+      //console.log("Trace - messageList helper messages (messageCatalog.js,556)");
       if (!globals || !globals.labelIds)
 	return;
       var label = Session.get("selectedLabel");
@@ -524,6 +579,7 @@ Template.labelNameEdit.events({
     },
     decrypt: function(key,data)
       {
+      //console.log("Trace - messageList helper decrypt (messageCatalog.js,571)");
       var ud = Session.get("userData");
       for(var i = 0; i<ud.keys.length; i++)
         {
@@ -584,6 +640,7 @@ Template.messageList.events
       },
     'click #allEmails': function(event)
       {
+      //console.log("Trace - messageList event click #allEmails (messageCatalog.js,632)");
       var countArray = forEachDisplayedMessage(function (elem) { elem.checked = event.currentTarget.checked; return elem; });
       if (!event.currentTarget.checked)
         {
@@ -597,6 +654,7 @@ Template.messageList.events
       },
     'click .summaryCheckBox': function(event)
       {
+      //console.log("Trace - messageList event click .summaryCheckBox (messageCatalog.js,646)");
       if (event.currentTarget.checked)
         {
         Session.set("numCheckedEmails",Session.get("numCheckedEmails")+1);        
@@ -609,6 +667,7 @@ Template.messageList.events
       },
     'click .emailSummary': function(event)
       {
+        //console.log("Trace - messageList event click .emailSummary (messageCatalog.js,659)");
         var line = event.currentTarget;
         var emailId = line.id;
         //console.log(line.id);
